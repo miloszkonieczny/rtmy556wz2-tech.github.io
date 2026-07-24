@@ -243,6 +243,7 @@ const messages = {
   "story.readingTime": "{minutes} min czytania",
   "story.newWords.one": "{count} nowe słowo",
   "story.newWords.many": "{count} nowe słowa",
+  "story.newWords.five": "{count} nowych słów",
   "story.languageMeta": "{language} · {words}",
   "story.generated.title": "{childName} i księżycowa przygoda z postacią: {character}",
   "story.generated.paragraph1": "Kiedy niebo stało się miękkie i srebrne, {childName} zobaczył(a) Milo obok małej świecącej mapy. „Dziś”, szepnął Milo, „idziemy za tym, co kochasz: {interest}, prosto w {mood} przygodę”.",
@@ -257,7 +258,7 @@ const messages = {
   "story.lesson.Confidence": "Nazwij jedną odważną decyzję dziecka w opowieści.",
   "story.lesson.Courage": "Porozmawiajcie o tym, że odwaga może być cicha, mała i nadal bardzo ważna.",
   "story.lesson.Kindness": "Zapytaj, kto w bajce potrzebował życzliwości i po czym dziecko to poznało.",
-  "story.generated.parentTip": "Po czytaniu poproś dziecko, aby wybrało jedno słowo z języka {targetLanguage} i użyło go w krótkim zdaniu na dobranoc.",
+  "story.generated.parentTip": "Po czytaniu poproś dziecko, aby wybrało jedno nowe słowo ({targetLanguage}) i użyło go w krótkim zdaniu na dobranoc.",
   "story.defaults.childName": "Twoje dziecko",
   "story.defaults.interest": "księżycowe promienie"
 };

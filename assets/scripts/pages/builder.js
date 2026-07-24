@@ -1,4 +1,4 @@
-import { STORY_BUILDER_FORMSPREE_TIMEOUT_MS, STORY_PAGE_URL } from "../core/config.js";
+import { STORY_BUILDER_FORMSPREE_TIMEOUT_MS, STORY_PAGE_URL } from "../core/config.js?v=20260724-story-fix";
 import { initializeCookieConsent } from "../core/cookie-consent.js";
 import { initializeRevealElements } from "../core/dom.js";
 import {
@@ -8,12 +8,12 @@ import {
   syncLanguageFormFields,
   translate,
   updateTranslatedContent,
-} from "../core/i18n.js";
+} from "../core/i18n.js?v=20260724-story-fix";
 import { initializeSiteNavigation } from "../core/navigation.js";
 import { readStoredProfile, writeStoredProfile } from "../core/storage.js";
 import { trackStoryBuilderStart, trackStoryGenerated, trackWaitlistSubmission } from "../core/analytics.js";
 import { buildMinimalWaitlistPayload, postMinimalWaitlistToFormspree } from "../services/formspree.js";
-import { fillFormFromProfile, getFormProfile } from "../services/story-profile.js";
+import { fillFormFromProfile, getFormProfile } from "../services/story-profile.js?v=20260724-story-fix";
 
 function setFieldError(field, key) {
   const wrapper = field.closest(".field");

@@ -1,12 +1,12 @@
-import { STORY_BUILDER_URL, resolveLanguageConfig } from "../core/config.js";
+import { STORY_BUILDER_URL } from "../core/config.js?v=20260724-story-fix";
 import { initializeBrowserDataDeletionControls } from "../core/browser-data.js";
 import { initializeCookieConsent } from "../core/cookie-consent.js";
 import { createStoryParagraph, initializeRevealElements } from "../core/dom.js";
-import { initializeLanguageSelectors, updateTranslatedContent } from "../core/i18n.js";
+import { initializeLanguageSelectors, updateTranslatedContent } from "../core/i18n.js?v=20260724-story-fix";
 import { initializeSiteNavigation } from "../core/navigation.js";
-import { readStoredProfile, saveGeneratedStory, writeCurrentLanguage } from "../core/storage.js";
+import { readStoredProfile, saveGeneratedStory } from "../core/storage.js";
 import { initializeFormspreeForms } from "../services/formspree.js";
-import { generateStory } from "../services/story-generator.js";
+import { generateStory } from "../services/story-generator.js?v=20260724-story-fix";
 
 function renderVocabularyList(vocabularyList, vocabulary) {
   if (!vocabularyList) return;
@@ -31,13 +31,6 @@ function renderStoryPage(options = {}) {
   if (!profile) {
     window.location.replace(STORY_BUILDER_URL);
     return;
-  }
-
-  const languageConfig = resolveLanguageConfig(profile);
-  const profileInterfaceLanguage = languageConfig.interfaceLanguage;
-  if (options.useProfileLanguage !== false && profileInterfaceLanguage) {
-    writeCurrentLanguage(profileInterfaceLanguage);
-    updateTranslatedContent();
   }
 
   const story = generateStory(profile);
@@ -73,11 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeSiteNavigation();
   initializeCookieConsent();
   initializeLanguageSelectors({
-    onLanguageChange: () => renderStoryPage({ useProfileLanguage: false, save: false }),
+    onLanguageChange: () => renderStoryPage({ save: false }),
   });
   updateTranslatedContent();
   initializeRevealElements();
   initializeFormspreeForms();
   initializeBrowserDataDeletionControls();
-  renderStoryPage({ useProfileLanguage: true, save: true });
+  renderStoryPage({ save: true });
 });

@@ -4,9 +4,16 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { LANGUAGE_STORAGE_KEY, PROFILE_STORAGE_KEY, SAVED_STORIES_KEY } from "../assets/scripts/core/config.js";
+import {
+  LANGUAGE_STORAGE_KEY,
+  PROFILE_STORAGE_KEY,
+  SAVED_STORIES_KEY,
+} from "../assets/scripts/core/config.js";
 import { deleteMoonTaleBrowserData } from "../assets/scripts/core/browser-data.js";
-import { buildMinimalWaitlistPayload, MINIMAL_WAITLIST_FIELDS } from "../assets/scripts/services/formspree.js";
+import {
+  buildMinimalWaitlistPayload,
+  MINIMAL_WAITLIST_FIELDS,
+} from "../assets/scripts/services/formspree.js";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -73,15 +80,31 @@ function isRelativeModuleReference(reference) {
 
 test("all six legal routes exist and public pages link to legal basics", () => {
   legalRoutes.forEach((route) => {
-    assert.equal(statSync(join(repoRoot, route)).isFile(), true, `${route} exists`);
+    assert.equal(
+      statSync(join(repoRoot, route)).isFile(),
+      true,
+      `${route} exists`,
+    );
   });
 
   allHtmlPages.forEach((page) => {
     const html = readProjectFile(page);
-    assert.equal(html.includes("legal/privacy/"), true, `${page} links to privacy`);
+    assert.equal(
+      html.includes("legal/privacy/"),
+      true,
+      `${page} links to privacy`,
+    );
     assert.equal(html.includes("legal/terms/"), true, `${page} links to terms`);
-    assert.equal(html.includes("legal/cookies/"), true, `${page} links to cookies`);
-    assert.match(html, /data-cookie-settings/, `${page} has cookie settings control`);
+    assert.equal(
+      html.includes("legal/cookies/"),
+      true,
+      `${page} links to cookies`,
+    );
+    assert.match(
+      html,
+      /data-cookie-settings/,
+      `${page} has cookie settings control`,
+    );
   });
 });
 
@@ -91,18 +114,28 @@ test("public legal pages use verified facts and no public placeholders", () => {
   assert.equal(legalText.includes("[FULL LEGAL NAME]"), false);
   assert.match(legalText, /Konieczny Miłosz/);
   assert.match(legalText, /contact@moontaleapp\.com/);
-  assert.match(legalText, /not currently a registered company or separate legal entity/);
+  assert.match(
+    legalText,
+    /not currently a registered company or separate legal entity/,
+  );
 });
 
 test("only the sole MoonTale-domain contact email appears in public HTML", () => {
   allHtmlPages.forEach((page) => {
     const html = readProjectFile(page);
-    const moontaleEmails = Array.from(html.matchAll(/[A-Z0-9._%+-]+@moontaleapp\.com/gi)).map((match) =>
-      match[0].toLowerCase(),
+    const moontaleEmails = Array.from(
+      html.matchAll(/[A-Z0-9._%+-]+@moontaleapp\.com/gi),
+    ).map((match) => match[0].toLowerCase());
+    assert.ok(
+      moontaleEmails.includes("contact@moontaleapp.com"),
+      `${page} has the public contact email`,
     );
-    assert.ok(moontaleEmails.includes("contact@moontaleapp.com"), `${page} has the public contact email`);
     moontaleEmails.forEach((email) =>
-      assert.equal(email, "contact@moontaleapp.com", `${page} has only the approved MoonTale-domain email`),
+      assert.equal(
+        email,
+        "contact@moontaleapp.com",
+        `${page} has only the approved MoonTale-domain email`,
+      ),
     );
   });
 });
@@ -110,11 +143,21 @@ test("only the sole MoonTale-domain contact email appears in public HTML", () =>
 test("public HTML does not load Google Analytics directly", () => {
   allHtmlPages.forEach((page) => {
     const html = readProjectFile(page);
-    assert.equal(html.includes("googletagmanager.com/gtag/js"), false, `${page} should not load GA directly`);
-    assert.equal(html.includes('gtag("config"'), false, `${page} should not configure GA directly`);
+    assert.equal(
+      html.includes("googletagmanager.com/gtag/js"),
+      false,
+      `${page} should not load GA directly`,
+    );
+    assert.equal(
+      html.includes('gtag("config"'),
+      false,
+      `${page} should not configure GA directly`,
+    );
   });
 
-  const cookieConsent = readProjectFile("assets/scripts/core/cookie-consent.js");
+  const cookieConsent = readProjectFile(
+    "assets/scripts/core/cookie-consent.js",
+  );
   assert.match(cookieConsent, /ANALYTICS_ID = "G-716GP23C93"/);
   assert.match(cookieConsent, /loadGoogleAnalytics/);
   assert.match(cookieConsent, /page_path: window\.location\.pathname/);
@@ -159,9 +202,13 @@ test("minimal Formspree payload excludes child-profile and story fields", () => 
     "newWordsCount",
     "generatedStory",
     "profile",
-  ].forEach((field) => assert.equal(Object.hasOwn(payload, field), false, `${field} is not sent`));
+  ].forEach((field) =>
+    assert.equal(Object.hasOwn(payload, field), false, `${field} is not sent`),
+  );
 
-  const formspreeScript = readProjectFile("assets/scripts/services/formspree.js");
+  const formspreeScript = readProjectFile(
+    "assets/scripts/services/formspree.js",
+  );
   assert.equal(formspreeScript.includes("new FormData(form)"), false);
 });
 
@@ -194,7 +241,9 @@ test("sitemap includes all legal routes", () => {
     "https://moontaleapp.com/legal/cookies/",
     "https://moontaleapp.com/legal/legal-notice/",
     "https://moontaleapp.com/legal/ip-infringement/",
-  ].forEach((url) => assert.equal(sitemap.includes(url), true, `sitemap includes ${url}`));
+  ].forEach((url) =>
+    assert.equal(sitemap.includes(url), true, `sitemap includes ${url}`),
+  );
 });
 
 test("local scripts, styles and images referenced by HTML exist", () => {
@@ -206,8 +255,14 @@ test("local scripts, styles and images referenced by HTML exist", () => {
       const cleanUrl = url.split("#")[0].split("?")[0];
       if (!cleanUrl || cleanUrl.startsWith("/")) continue;
       const resolved = resolve(dirname(join(repoRoot, page)), cleanUrl);
-      const target = cleanUrl.endsWith("/") ? join(resolved, "index.html") : resolved;
-      assert.equal(existsSync(target), true, `${page} references existing ${url}`);
+      const target = cleanUrl.endsWith("/")
+        ? join(resolved, "index.html")
+        : resolved;
+      assert.equal(
+        existsSync(target),
+        true,
+        `${page} references existing ${url}`,
+      );
     }
   });
 });
@@ -222,7 +277,11 @@ test("local HTML scripts and JavaScript module imports resolve to existing files
       if (/^(https?:|data:)/.test(scriptUrl)) continue;
       const scriptPath = resolveLocalReference(page, scriptUrl);
       assert.ok(scriptPath, `${page} has a local script path`);
-      assert.equal(existsSync(scriptPath), true, `${page} script exists: ${scriptUrl}`);
+      assert.equal(
+        existsSync(scriptPath),
+        true,
+        `${page} script exists: ${scriptUrl}`,
+      );
       entryScripts.add(scriptPath);
     }
   });
@@ -237,18 +296,52 @@ test("local HTML scripts and JavaScript module imports resolve to existing files
 
     findModuleReferences(scriptPath).forEach((reference) => {
       if (!isRelativeModuleReference(reference)) return;
-      const resolvedPath = resolve(dirname(scriptPath), reference);
-      assert.equal(existsSync(resolvedPath), true, `${scriptPath} imports existing ${reference}`);
+      const cleanReference = reference.split("#")[0].split("?")[0];
+      const resolvedPath = resolve(dirname(scriptPath), cleanReference);
+      assert.equal(
+        existsSync(resolvedPath),
+        true,
+        `${scriptPath} imports existing ${reference}`,
+      );
       if (/\.m?js$/.test(resolvedPath)) pendingScripts.push(resolvedPath);
     });
   }
 
-  assert.ok(entryScripts.size > 0, "HTML pages include local module entrypoints");
-  assert.ok(seenScripts.size >= entryScripts.size, "module graph was traversed");
+  assert.ok(
+    entryScripts.size > 0,
+    "HTML pages include local module entrypoints",
+  );
+  assert.ok(
+    seenScripts.size >= entryScripts.size,
+    "module graph was traversed",
+  );
 });
 
 test("no public HTML references a missing legacy script", () => {
   allHtmlPages.forEach((page) => {
-    assert.equal(readProjectFile(page).includes("script.js"), false, `${page} does not use legacy script.js`);
+    assert.equal(
+      readProjectFile(page).includes("script.js"),
+      false,
+      `${page} does not use legacy script.js`,
+    );
   });
+});
+
+test("story generation is self-contained and does not depend on removed browser globals", () => {
+  const storyHtml = readProjectFile("story.html");
+  const generatorScript = readProjectFile(
+    "assets/scripts/services/story-generator.js",
+  );
+  const storyPageScript = readProjectFile("assets/scripts/pages/story.js");
+
+  assert.equal(storyHtml.includes("stories.js"), false);
+  assert.equal(storyHtml.includes("story-engine.js"), false);
+  assert.equal(storyHtml.includes("vocabulary/"), false);
+  assert.equal(generatorScript.includes("window.MoonTaleStories"), false);
+  assert.equal(storyPageScript.includes("writeCurrentLanguage"), false);
+  assert.match(
+    generatorScript,
+    /from "\.\.\/\.\.\/\.\.\/data\/story-content\.js"/,
+  );
+  assert.match(generatorScript, /from "\.\/vocabulary\.js"/);
 });

@@ -1,4 +1,7 @@
-import { languageNameFromCode, resolveLanguageConfig } from "../core/config.js";
+import {
+  languageNameFromCode,
+  resolveLanguageConfig,
+} from "../core/config.js?v=20260724-story-fix";
 import { getCurrentLanguage } from "../core/storage.js";
 
 function readFieldValue(form, name) {
@@ -47,11 +50,22 @@ export function getFormProfile(form) {
 export function fillFormFromProfile(form, profile) {
   if (!profile) return;
 
-  Object.entries(profile).forEach(([name, value]) => {
+  const languageConfig = resolveLanguageConfig(profile);
+  const formValues = {
+    ...profile,
+    currentLanguage: languageNameFromCode(languageConfig.narrativeLanguage),
+    targetLanguage: languageNameFromCode(languageConfig.learningLanguage),
+    websiteLanguage: languageConfig.interfaceLanguage,
+  };
+
+  Object.entries(formValues).forEach(([name, value]) => {
     const field = form.elements[name];
     if (!field || value === undefined || value === null) return;
 
-    if (typeof RadioNodeList !== "undefined" && field instanceof RadioNodeList) {
+    if (
+      typeof RadioNodeList !== "undefined" &&
+      field instanceof RadioNodeList
+    ) {
       Array.from(field).forEach((input) => {
         if (input.value === String(value)) input.checked = true;
       });

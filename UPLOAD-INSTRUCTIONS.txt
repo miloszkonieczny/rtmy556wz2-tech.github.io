@@ -1,0 +1,62 @@
+MOONTALE MANUAL GITHUB UPLOAD
+
+IMPORTANT
+Do not upload this whole folder or its ZIP file into the repository.
+Upload the 14 files inside it to their matching GitHub folders.
+
+SAFEST WORKFLOW
+1. In GitHub, create a new branch from main named:
+   fix/story-builder-pipeline
+2. Make sure that branch is selected before uploading anything.
+3. Open each destination folder on GitHub.
+4. Choose Add file > Upload files.
+5. Upload the matching files listed below and commit them to the new branch.
+6. After all 14 files are present, open a pull request into main.
+7. Merge the pull request. GitHub Pages should then redeploy the website.
+
+UPLOAD ORDER AND DESTINATIONS
+
+1) GitHub folder: assets/scripts/services/
+   Upload:
+   - story-generator.js
+   - story-profile.js
+   - template-renderer.js
+   - vocabulary.js
+
+2) GitHub folder: assets/scripts/core/
+   Upload:
+   - config.js
+   - i18n.js
+
+3) GitHub folder: data/
+   Upload:
+   - story-content.js
+
+4) GitHub folder: locales/
+   Upload:
+   - pl.js
+
+5) GitHub folder: assets/scripts/pages/
+   Upload:
+   - builder.js
+   - story.js
+
+6) Repository root
+   Upload:
+   - story-builder.html
+   - story.html
+
+7) GitHub folder: tests/
+   Upload:
+   - legal-static.test.mjs
+   - moontale.test.mjs
+
+FINAL CHECK
+There must be exactly 14 uploaded or replaced files.
+Do not upload:
+- UPLOAD-INSTRUCTIONS.txt
+- moontale-github-upload.zip
+- moontale-story-builder-fix.patch
+
+Verified source commit:
+fe84f8b877b9109ebc5ee94b446b6ad6efad248b

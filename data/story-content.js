@@ -49,12 +49,12 @@ export const STORY_CONTENT = {
   pl: {
     title: "{name} i księżycowa przygoda z postacią: {character}",
     ending:
-      "Milo schował ostatnią srebrną iskierkę do książki i szepnął, że każde odważne słowo może odpocząć do rana. {name} zakończył(a) przygodę ze spokojnym sercem, niosąc język {language} prosto w cichy sen.",
+      "Milo schował ostatnią srebrną iskierkę do książki i szepnął, że każde odważne słowo może odpocząć do rana. {name} zakończył(a) przygodę ze spokojnym sercem, niosąc nowe słowa ({language}) prosto w cichy sen.",
     beats: {
       opening:
         "Kiedy pokój ucichł, a księżyc zmiękczył światło w oknie, {name} znalazł(a) Milo przy małej świecącej mapie. Mapa migotała wokół tego, co ważne: {interest}, a Milo obiecał, że dzisiejsza {mood} przygoda popłynie spokojnie.",
       mission:
-        "Mapa zaprowadziła ich do księżycowej bramy, gdzie życzliwa postać, {character}, potrzebowała pomocy w otwarciu ścieżki ze światła gwiazd. Milo wyjaśnił misję: słuchać słów w języku {language}, zauważać ich znaczenie i używać ich jak małych latarek.",
+        "Mapa zaprowadziła ich do księżycowej bramy, gdzie życzliwa postać, {character}, potrzebowała pomocy w otwarciu ścieżki ze światła gwiazd. Milo wyjaśnił misję: słuchać nowych słów ({language}), zauważać ich znaczenie i używać ich jak małych latarek.",
       vocabulary:
         "Pierwsze słowa-latarenki to {wordPhrase}. Milo wypowiedział każde z nich wyraźnie, a potem podał znaczenie głosem miękkim jak kocyk na dobranoc. {name} powtórzył(a) słowa bez pośpiechu, żeby stały się częścią przygody.",
       interest:
@@ -62,7 +62,7 @@ export const STORY_CONTENT = {
       obstacle:
         "Senna chmura zasłoniła most ze światła gwiazd i ukryła następny krok. Przez chwilę droga wydawała się niemożliwa, ale Milo przypomniał, że w każdej opowieści jest spokojna pauza, w której rośnie odwaga.",
       action:
-        "{name} wybrał(a) jedno słowo w języku {language} i położył(a) je na moście. Słowo rozbłysło, chmura się rozsunęła, a {character} pokazał, że następny krok można zrobić łagodnie, bez pośpiechu.",
+        "{name} wybrał(a) jedno nowe słowo ({language}) i położył(a) je na moście. Słowo rozbłysło, chmura się rozsunęła, a {character} pokazał, że następny krok można zrobić łagodnie, bez pośpiechu.",
       reward:
         "Ponieważ {name} słuchał(a) uważnie, most otworzył się na mały księżycowy ogród. W ogrodzie czekało {wordCount} srebrnych nasion, po jednym dla każdego nowego słowa, a Milo schował je w opowieści na jutro.",
       lesson:
@@ -70,7 +70,7 @@ export const STORY_CONTENT = {
     },
     details: [
       "{character} szedł obok cierpliwym krokiem, czasem wskazując mapę, a czasem czekając, aż {name} samodzielnie zauważy ważny szczegół.",
-      "Gdy pojawiało się {interest}, Milo zadawał jedno małe pytanie, a odpowiedź pomagała połączyć kolejne słowo w języku {language} z czymś prawdziwym.",
+      "Gdy pojawiało się {interest}, Milo zadawał jedno małe pytanie, a odpowiedź pomagała połączyć kolejne słowo ({language}) z czymś prawdziwym.",
       "Nastrój przygody pozostawał {mood}, nawet gdy ścieżka zaskakiwała, bo opowieść zawsze wracała do oddechu, słuchania i kolejnej próby.",
       "Milo nie przyspieszał nowych słów. Pozwalał usłyszeć je w zdaniu, potem ich znaczenie, a potem jeszcze raz całe zdanie.",
       "Srebrny dzwoneczek zabrzmiał cicho, gdy {name} przypomniał(a) sobie słowo, nie jak sprawdzian, lecz jak znak uważnego słuchania.",
@@ -81,7 +81,7 @@ export const STORY_CONTENT = {
       "Kiedy ścieżka zawróciła do domu, {name} nadal pamiętał(a): {wordPhrase}, bo każde słowo było częścią ważnej chwili.",
       "Milo powiedział, że dobra bajka na dobranoc nie musi być głośna; wystarczy, że jest bliska, życzliwa i prawdziwa.",
       "Ostatni blask na mapie oznaczał, że dzisiejsza nauka jest domknięta, ale nie skończona, bo jutro te słowa mogą otworzyć się znów.",
-      "Zanim mapa złożyła się sama, {character} poprosił, żeby {name} opowiedział(a) przygodę szeptem, zaczynając od {interest} i kończąc ulubionym słowem w języku {language}.",
+      "Zanim mapa złożyła się sama, {character} poprosił, żeby {name} opowiedział(a) przygodę szeptem, zaczynając od {interest} i kończąc ulubionym słowem ({language}).",
       "Milo słuchał tak, jakby każde małe zdanie było ważne, bo spokojne opowiadanie pomagało nowym słowom zostać w pamięci bez zamieniania wieczoru w lekcję.",
       "Rząd sennych gwiazd mrugał powoli, a {name} zauważył(a), że każde mrugnięcie pasuje do oddechu, zapamiętanego słowa i odważnego kroku.",
       "{mood} przygoda stawała się ciszej przy ogrodowym murku, dając {name} miejsce na dumę bez potrzeby tłumaczenia wszystkiego od razu.",
@@ -90,7 +90,7 @@ export const STORY_CONTENT = {
       "Gdy światła ogrodu przygasły, {name} wybrał(a) jedno słowo z {wordPhrase} i wyobraził(a) sobie, jak jutro użyje go w prawdziwym, małym zdaniu.",
       "Milo uśmiechnął się, bo nowe słowo nie było już obce; przeszło przez most, pomogło przyjacielowi i znalazło miejsce w bajce.",
       "Pokój za księżycową ścieżką znów wydawał się bliski, pełen koca, cichych dźwięków i znajomego uczucia, że sen jest już niedaleko.",
-      "Kiedy mapa stała się srebrną zakładką, {name} wiedział(a), że nauka języka {language} może być łagodna, osobista i gotowa wrócić jutro.",
+      "Kiedy mapa stała się srebrną zakładką, {name} wiedział(a), że nauka przez nowe słowa ({language}) może być łagodna, osobista i gotowa wrócić jutro.",
       "Na ostatnim zakręcie Milo poprosił, aby {name} położył(a) dłoń na sercu i sprawdził(a), które słowo brzmi najspokojniej po całej przygodzie.",
       "{character} przytaknął cicho, a księżycowy ogród zapamiętał ten wybór, jakby nawet najmniejsze odkrycie zasługiwało na swoje miejsce w nocy.",
       "Potem Milo przypomniał, że jedno dobrze poznane słowo może czasem świecić mocniej niż wiele słów wypowiedzianych zbyt szybko.",
