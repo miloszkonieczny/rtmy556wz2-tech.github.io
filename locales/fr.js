@@ -21,6 +21,7 @@ const messages = {
   "nav.openMenu": "Ouvrir le menu de navigation",
   "nav.closeMenu": "Fermer le menu de navigation",
   "nav.createStory": "Créer une histoire",
+  "nav.account": "Compte",
   "nav.howItWorks": "Fonctionnement",
   "nav.languageLearning": "Apprentissage des langues",
   "nav.about": "À propos de MoonTale",

@@ -33,6 +33,7 @@ function walkFiles(dir, predicate, root = dir) {
 
 const publicPages = [
   "index.html",
+  "account.html",
   "story-builder.html",
   "story.html",
   "personalized-bedtime-stories-for-kids.html",

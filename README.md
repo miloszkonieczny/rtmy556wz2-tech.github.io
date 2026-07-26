@@ -16,6 +16,7 @@ Sole public contact email: contact@moontaleapp.com
 - Gentle vocabulary exposure
 - Parent-selected themes and goals
 - Local browser storage for story previews
+- Optional parent authentication and private child-profile management
 - Responsive design for desktop and mobile use
 - Accessibility considerations such as semantic HTML, skip links, labels, and live status regions
 
@@ -33,11 +34,12 @@ Sole public contact email: contact@moontaleapp.com
 - CSS
 - Vanilla JavaScript
 - GitHub Pages
+- Supabase Auth and the RLS-protected `child_profiles` table for optional parent accounts
 - Formspree for voluntary waitlist/product-update email submissions
 - Google Analytics tag ID `G-716GP23C93`, loaded only after optional analytics consent
 - Local browser story generation from predefined templates and vocabulary
 
-No external AI provider is currently connected. MoonTale has no user accounts, payments, subscriptions, public profiles, comments, messaging or public user-generated-content system.
+No external AI provider is currently connected. MoonTale supports optional parent accounts and private child profiles, but it has no child accounts, payments, subscriptions, public profiles, comments, messaging or public user-generated-content system.
 
 MoonTale does not require a build step to run in production. The development tooling in `package.json` is optional and exists only for formatting checks and lightweight logic tests.
 The JavaScript is organized as browser ES modules, with page-specific entry points under `assets/scripts/pages/`.
@@ -48,6 +50,8 @@ The JavaScript is organized as browser ES modules, with page-specific entry poin
 - Interface language is stored under `moontaleLanguage`.
 - Cookie choice is stored under `moontaleCookieConsent`.
 - The story builder does not require an email address.
+- Supabase stores the parent account email and authenticated child profiles created explicitly on `account.html`; Row Level Security limits each parent to their own profiles.
+- Supabase Auth stores a persistent session in browser storage after sign-in. Signing out removes the local session.
 - Formspree receives only a minimal waitlist/product-update payload after adult opt-in: `email`, `source`, `adultConfirmation`, `marketingConsent`, `consentTextVersion`, and `submissionDate`.
 - Child nickname, age, interests, story settings and generated story text are not sent to Formspree.
 - Google Analytics is blocked until optional analytics consent is accepted.
@@ -84,8 +88,10 @@ The JavaScript is organized as browser ES modules, with page-specific entry poin
 │   ├── fr.js
 │   └── de.js
 ├── tests/
+│   ├── account.test.mjs
 │   ├── legal-static.test.mjs
 │   └── moontale.test.mjs
+├── account.html
 ├── index.html
 ├── personalized-bedtime-stories-for-kids.html
 ├── story-builder.html
@@ -143,11 +149,13 @@ Test the main user flow before publishing changes:
 6. Confirm `story.html` opens and displays the generated story.
 7. Confirm the generated story follows the selected current language.
 8. Confirm story creation works without an email address.
-9. Confirm Formspree receives only the minimal waitlist/product-update payload when the adult opts in.
-10. Confirm the cookie banner appears for a fresh visitor, optional analytics does not load before consent, and the Cookie Settings button reopens the banner.
-11. Confirm the “Delete MoonTale stories and profile” control removes only browser story/profile data.
-12. Confirm the legal footer links open the Privacy Policy, Terms, Cookie Policy, Legal Notice, and IP Infringement Policy.
-13. Confirm `robots.txt` and `sitemap.xml` are reachable from the site root.
+9. Open `account.html` and test registration, email confirmation, sign-in, sign-out, password reset and password recovery.
+10. While signed in, create, list, edit and delete a child profile, then confirm a second account cannot access it.
+11. Confirm Formspree receives only the minimal waitlist/product-update payload when the adult opts in.
+12. Confirm the cookie banner appears for a fresh visitor, optional analytics does not load before consent, and the Cookie Settings button reopens the banner.
+13. Confirm the “Delete MoonTale stories and profile” control removes only browser story/profile data, not authenticated Supabase profiles.
+14. Confirm the legal footer links open the Privacy Policy, Terms, Cookie Policy, Legal Notice, and IP Infringement Policy.
+15. Confirm `robots.txt` and `sitemap.xml` are reachable from the site root.
 
 ## Contribution Workflow
 
@@ -173,6 +181,7 @@ See `CONTRIBUTING.md` for more detailed guidelines.
 ## Known Limitations
 
 - Story generation currently runs in the browser using local templates and browser storage.
+- Authenticated profile flows depend on the configured Supabase project and should be tested against the deployed site with two disposable parent accounts before release.
 - Interface language, narrative language, and learning language are resolved separately. Invalid or missing learning-language values fall back to Spanish after validation, and the fallback is exposed in story metadata.
 - Automated tests cover language resolution, translation fallback, safe storage parsing, vocabulary selection, and story generation.
 - Form submissions depend on the configured Formspree endpoint.

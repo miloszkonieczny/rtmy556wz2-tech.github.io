@@ -498,6 +498,11 @@ body.is-mobile-nav-open .mobile-nav-drawer {
   border-bottom: 1px solid rgba(43, 33, 24, 0.4);
 }
 
+.header-account-link.is-active {
+  border-color: var(--rose);
+  color: #7d4f48;
+}
+
 .hero {
   min-height: min(720px, calc(100vh - 86px));
   display: grid;
