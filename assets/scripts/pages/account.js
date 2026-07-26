@@ -9,9 +9,12 @@ import {
   profileFormValues,
 } from "../services/child-profiles.js";
 import {
+  createAuthCallbackTracker,
   getAccountRedirectUrl,
+  getAuthCallbackContext,
   getSupabaseClient,
-} from "../supabase-config.js";
+  updateRecoveryPassword,
+} from "../supabase-config.js?v=20260726-recovery";
 
 const elements = {
   pageStatus: document.querySelector("#account-status"),
@@ -40,6 +43,10 @@ const state = {
   recoveryMode: false,
   intentionalSignOut: false,
   authCallbackPending: false,
+  authCallbackTracker: null,
+  authInitializationComplete: false,
+  invalidCallbackActive: false,
+  initialSessionHandled: false,
 };
 
 function setMessage(element, message = "", tone = "neutral") {
@@ -99,31 +106,6 @@ function callbackParameters() {
   const search = url.searchParams;
   const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
   return { url, search, hash };
-}
-
-function getCallbackError() {
-  const { search, hash } = callbackParameters();
-  return (
-    search.get("error_description") ||
-    hash.get("error_description") ||
-    search.get("error") ||
-    hash.get("error")
-  );
-}
-
-function hasAuthCallback() {
-  const { search, hash } = callbackParameters();
-  return (
-    search.has("code") ||
-    search.has("error") ||
-    hash.has("access_token") ||
-    hash.has("error")
-  );
-}
-
-function hasRecoveryHint() {
-  const { search, hash } = callbackParameters();
-  return search.get("type") === "recovery" || hash.get("type") === "recovery";
 }
 
 function cleanAuthUrl() {
@@ -375,6 +357,24 @@ async function expireSession() {
   await state.client.auth.signOut({ scope: "local" }).catch(() => {});
 }
 
+async function showInvalidAuthCallback(session) {
+  state.invalidCallbackActive = true;
+  state.authCallbackPending = false;
+  state.recoveryMode = false;
+  resetSignedInState();
+  showAccountView("signed-out");
+  setMessage(
+    elements.pageStatus,
+    "This confirmation or password-recovery link is invalid or has expired. If you requested a password reset, request a new link and open it in the same browser so its secure PKCE verifier is available.",
+    "error",
+  );
+
+  if (session?.user) {
+    await state.client.auth.signOut({ scope: "local" }).catch(() => {});
+  }
+  cleanAuthUrl();
+}
+
 async function loadProfiles(user) {
   const requestId = ++state.profileRequestId;
   elements.addProfile.disabled = true;
@@ -421,8 +421,12 @@ async function loadProfiles(user) {
 
 async function applyAuthState(event, session) {
   if (event === "PASSWORD_RECOVERY") {
+    if (!session?.user) {
+      await showInvalidAuthCallback(null);
+      return;
+    }
     state.recoveryMode = true;
-    state.user = session?.user || null;
+    state.user = session.user;
     showAccountView("recovery");
     setMessage(
       elements.pageStatus,
@@ -431,7 +435,11 @@ async function applyAuthState(event, session) {
     return;
   }
 
-  if (state.recoveryMode && session?.user) {
+  if (
+    state.recoveryMode &&
+    (session?.user || event === "INITIAL_SESSION")
+  ) {
+    if (session?.user) state.user = session.user;
     showAccountView("recovery");
     setMessage(
       elements.pageStatus,
@@ -640,7 +648,7 @@ function wireAuthenticationForms() {
       setMessage(elements.pageStatus, "Updating your password…");
 
       try {
-        const result = await state.client.auth.updateUser({ password });
+        const result = await updateRecoveryPassword(state.client, password);
         if (result.error) {
           setMessage(
             elements.pageStatus,
@@ -846,13 +854,93 @@ function wireProfileControls() {
   });
 }
 
+function registerAuthStateListener() {
+  state.client.auth.onAuthStateChange((event, session) => {
+    state.authCallbackTracker.observe(event, session);
+    if (event === "PASSWORD_RECOVERY" && session?.user) {
+      state.recoveryMode = true;
+    }
+
+    if (!state.authInitializationComplete) return;
+    if (event === "INITIAL_SESSION" && state.initialSessionHandled) return;
+    if (
+      state.invalidCallbackActive &&
+      (event === "INITIAL_SESSION" || event === "SIGNED_OUT")
+    ) {
+      return;
+    }
+    if (event === "SIGNED_IN") state.invalidCallbackActive = false;
+
+    window.setTimeout(() => {
+      applyAuthState(event, session)
+        .then(() => {
+          if (event === "PASSWORD_RECOVERY" && session?.user) cleanAuthUrl();
+        })
+        .catch((error) => {
+          console.error("MoonTale auth state update failed", error);
+          setMessage(
+            elements.pageStatus,
+            "The account state could not be refreshed. Reload the page and try again.",
+            "error",
+          );
+        });
+    }, 0);
+  });
+}
+
+async function waitForInitialAuthEvent() {
+  let timeoutId;
+  await Promise.race([
+    state.authCallbackTracker.waitForInitialSession(),
+    new Promise((resolve) => {
+      timeoutId = window.setTimeout(resolve, 2500);
+    }),
+  ]);
+  if (timeoutId) window.clearTimeout(timeoutId);
+}
+
+async function resolveInitialAuthState(sessionResult) {
+  const resolution = state.authCallbackTracker.resolve(sessionResult);
+
+  if (resolution.status === "recovery" && resolution.session?.user) {
+    state.recoveryMode = true;
+    await applyAuthState("PASSWORD_RECOVERY", resolution.session);
+    cleanAuthUrl();
+  } else if (
+    resolution.status === "confirmation" &&
+    resolution.session?.user
+  ) {
+    await applyAuthState("SIGNED_IN", resolution.session);
+    cleanAuthUrl();
+  } else if (resolution.status === "invalid") {
+    await showInvalidAuthCallback(resolution.session);
+  } else {
+    await applyAuthState("INITIAL_SESSION", resolution.session);
+    if (resolution.error) {
+      setMessage(
+        elements.pageStatus,
+        "Your saved session could not be restored. Sign in again to continue.",
+        "error",
+      );
+    }
+  }
+
+  state.initialSessionHandled = true;
+  state.authInitializationComplete = true;
+}
+
 async function initializeAccountPage() {
   initializeSiteNavigation();
   initializeCookieConsent();
   showAccountView("signed-out");
 
   try {
+    const callbackContext = getAuthCallbackContext();
+    state.authCallbackTracker = createAuthCallbackTracker(callbackContext);
+    state.authCallbackPending = callbackContext.hasCallback;
+    state.recoveryMode = callbackContext.recoveryHint;
     state.client = getSupabaseClient();
+    registerAuthStateListener();
     state.profileService = createChildProfileService(state.client);
   } catch (error) {
     console.error("MoonTale Supabase initialization failed", error);
@@ -868,34 +956,10 @@ async function initializeAccountPage() {
   wireAuthenticationForms();
   wireProfileControls();
   enableAccountControls();
-  state.authCallbackPending = hasAuthCallback();
-  state.recoveryMode = hasRecoveryHint();
 
-  state.client.auth.onAuthStateChange((event, session) => {
-    window.setTimeout(() => {
-      applyAuthState(event, session).catch((error) => {
-        console.error("MoonTale auth state update failed", error);
-        setMessage(
-          elements.pageStatus,
-          "The account state could not be refreshed. Reload the page and try again.",
-          "error",
-        );
-      });
-    }, 0);
-  });
-
-  const callbackError = getCallbackError();
   const sessionResult = await state.client.auth.getSession();
-  await applyAuthState("INITIAL_SESSION", sessionResult.data?.session || null);
-
-  if (callbackError || sessionResult.error) {
-    setMessage(
-      elements.pageStatus,
-      "This confirmation or recovery link is invalid or has expired. Request a new link and try again.",
-      "error",
-    );
-  }
-  cleanAuthUrl();
+  await waitForInitialAuthEvent();
+  await resolveInitialAuthState(sessionResult);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

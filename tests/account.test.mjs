@@ -16,8 +16,11 @@ import {
 import {
   SUPABASE_PUBLISHABLE_KEY,
   SUPABASE_URL,
+  createAuthCallbackTracker,
   getAccountRedirectUrl,
+  getAuthCallbackContext,
   getSupabaseClient,
+  updateRecoveryPassword,
 } from "../assets/scripts/supabase-config.js";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -57,6 +60,168 @@ test("Supabase uses the configured public project values and one persistent v2 c
   assert.equal(calls[0].options.auth.autoRefreshToken, true);
   assert.equal(calls[0].options.auth.detectSessionInUrl, true);
   assert.equal(calls[0].options.auth.flowType, "pkce");
+});
+
+test("PKCE code callbacks are detected without relying on a recovery type parameter", async () => {
+  const context = getAuthCallbackContext({
+    href: "https://moontaleapp.com/account.html?code=pkce-code",
+  });
+  assert.deepEqual(context, {
+    errorDescription: "",
+    hasCallback: true,
+    hasCode: true,
+    recoveryHint: false,
+  });
+
+  const recoverySession = {
+    access_token: "public-test-token",
+    user: { id: "parent-1", email: "parent@example.com" },
+  };
+  const tracker = createAuthCallbackTracker(context);
+  tracker.observe("PASSWORD_RECOVERY", recoverySession);
+  tracker.observe("INITIAL_SESSION", recoverySession);
+  await tracker.waitForInitialSession();
+
+  assert.deepEqual(
+    tracker.resolve({ data: { session: recoverySession }, error: null }),
+    {
+      error: null,
+      session: recoverySession,
+      status: "recovery",
+    },
+  );
+});
+
+test("PASSWORD_RECOVERY received during initialization wins over pending session loading", async () => {
+  const tracker = createAuthCallbackTracker(
+    getAuthCallbackContext({
+      href: "https://moontaleapp.com/account.html?code=recovery-code",
+    }),
+  );
+  const recoverySession = {
+    access_token: "public-test-token",
+    user: { id: "parent-1" },
+  };
+  let finishSessionLoading;
+  const sessionLoading = new Promise((resolve) => {
+    finishSessionLoading = resolve;
+  });
+
+  const resolution = (async () => {
+    const sessionResult = await sessionLoading;
+    await tracker.waitForInitialSession();
+    return tracker.resolve(sessionResult);
+  })();
+
+  tracker.observe("PASSWORD_RECOVERY", recoverySession);
+  tracker.observe("INITIAL_SESSION", recoverySession);
+  finishSessionLoading({
+    data: { session: recoverySession },
+    error: null,
+  });
+
+  assert.equal((await resolution).status, "recovery");
+});
+
+test("INITIAL_SESSION cannot replace an active password-recovery state", async () => {
+  const tracker = createAuthCallbackTracker(
+    getAuthCallbackContext({
+      href: "https://moontaleapp.com/account.html?code=recovery-code",
+    }),
+  );
+  const recoverySession = {
+    access_token: "public-test-token",
+    user: { id: "parent-1" },
+  };
+
+  tracker.observe("PASSWORD_RECOVERY", recoverySession);
+  tracker.observe("INITIAL_SESSION", null);
+  await tracker.waitForInitialSession();
+
+  const resolution = tracker.resolve({
+    data: { session: null },
+    error: null,
+  });
+  assert.equal(resolution.status, "recovery");
+  assert.equal(resolution.session, recoverySession);
+});
+
+test("invalid, expired, and missing-verifier callbacks resolve as invalid", async () => {
+  const expiredTracker = createAuthCallbackTracker(
+    getAuthCallbackContext({
+      href: "https://moontaleapp.com/account.html?error=access_denied&error_description=Email%20link%20has%20expired",
+    }),
+  );
+  expiredTracker.observe("INITIAL_SESSION", null);
+  await expiredTracker.waitForInitialSession();
+  assert.equal(
+    expiredTracker.resolve({ data: { session: null }, error: null }).status,
+    "invalid",
+  );
+
+  const missingVerifierTracker = createAuthCallbackTracker(
+    getAuthCallbackContext({
+      href: "https://moontaleapp.com/account.html?code=missing-verifier",
+    }),
+  );
+  missingVerifierTracker.observe("INITIAL_SESSION", null);
+  await missingVerifierTracker.waitForInitialSession();
+  const missingVerifierResolution = missingVerifierTracker.resolve({
+    data: { session: null },
+    error: new Error("PKCE code verifier not found"),
+  });
+  assert.equal(missingVerifierResolution.status, "invalid");
+  assert.match(missingVerifierResolution.error.message, /verifier/i);
+});
+
+test("normal email confirmation callbacks remain signed-in confirmations", async () => {
+  const tracker = createAuthCallbackTracker(
+    getAuthCallbackContext({
+      href: "https://moontaleapp.com/account.html?code=confirmation-code",
+    }),
+  );
+  const confirmationSession = {
+    access_token: "public-test-token",
+    user: { id: "parent-1", email: "parent@example.com" },
+  };
+
+  tracker.observe("SIGNED_IN", confirmationSession);
+  tracker.observe("INITIAL_SESSION", confirmationSession);
+  await tracker.waitForInitialSession();
+
+  assert.deepEqual(
+    tracker.resolve({
+      data: { session: confirmationSession },
+      error: null,
+    }),
+    {
+      error: null,
+      session: confirmationSession,
+      status: "confirmation",
+    },
+  );
+});
+
+test("successful recovery password updates call auth.updateUser", async () => {
+  const calls = [];
+  const result = await updateRecoveryPassword(
+    {
+      auth: {
+        async updateUser(payload) {
+          calls.push(payload);
+          return {
+            data: { user: { id: "parent-1" } },
+            error: null,
+          };
+        },
+      },
+    },
+    "a-new-secure-password",
+  );
+
+  assert.deepEqual(calls, [{ password: "a-new-secure-password" }]);
+  assert.equal(result.error, null);
+  assert.equal(result.data.user.id, "parent-1");
 });
 
 test("child-profile payload uses the exact database fields and normalizes safe values", () => {
@@ -377,7 +542,7 @@ test("account implementation uses safe DOM rendering and includes required Supab
   assert.match(accountScript, /signUp\(/);
   assert.match(accountScript, /signInWithPassword\(/);
   assert.match(accountScript, /resetPasswordForEmail\(/);
-  assert.match(accountScript, /updateUser\(\{ password \}\)/);
+  assert.match(config, /updateUser\(\{ password \}\)/);
   assert.match(accountScript, /signOut\(\{ scope: "local" \}\)/);
   assert.match(accountScript, /setFormBusy/);
   assert.match(profileService, /parent_id: user\.id/);
@@ -389,4 +554,51 @@ test("account implementation uses safe DOM rendering and includes required Supab
   );
   assert.doesNotMatch(browserSources, /\bsb_secret_[A-Za-z0-9_-]+/);
   assert.doesNotMatch(browserSources, /\bsk-[A-Za-z0-9_-]{16,}/);
+});
+
+test("account initialization registers auth recovery before other client work", () => {
+  const accountScript = readProjectFile("assets/scripts/pages/account.js");
+  const clientPosition = accountScript.indexOf(
+    "state.client = getSupabaseClient();",
+  );
+  const listenerPosition = accountScript.indexOf(
+    "registerAuthStateListener();",
+    clientPosition,
+  );
+  const profileServicePosition = accountScript.indexOf(
+    "state.profileService = createChildProfileService(state.client);",
+    clientPosition,
+  );
+  const getSessionPosition = accountScript.indexOf(
+    "await state.client.auth.getSession();",
+    clientPosition,
+  );
+  const initialEventPosition = accountScript.indexOf(
+    "await waitForInitialAuthEvent();",
+    getSessionPosition,
+  );
+  const resolutionPosition = accountScript.indexOf(
+    "await resolveInitialAuthState(sessionResult);",
+    initialEventPosition,
+  );
+  const initializeEndPosition = accountScript.indexOf(
+    'document.addEventListener("DOMContentLoaded"',
+    clientPosition,
+  );
+  const initializationBody = accountScript.slice(
+    clientPosition,
+    initializeEndPosition,
+  );
+
+  assert.ok(clientPosition > -1);
+  assert.ok(listenerPosition > clientPosition);
+  assert.ok(listenerPosition < profileServicePosition);
+  assert.ok(listenerPosition < getSessionPosition);
+  assert.ok(initialEventPosition > getSessionPosition);
+  assert.ok(resolutionPosition > initialEventPosition);
+  assert.equal(initializationBody.includes("cleanAuthUrl();"), false);
+  assert.match(
+    accountScript,
+    /event === "PASSWORD_RECOVERY" && session\?\.user/,
+  );
 });
