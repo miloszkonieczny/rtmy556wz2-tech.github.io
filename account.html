@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Create or sign in to a MoonTale parent account and privately manage child story profiles."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Parent Account | MoonTale</title>
+    <link rel="stylesheet" href="./styles.css?v=20260715-nav" />
+    <link
+      rel="stylesheet"
+      href="./assets/styles/account.css?v=20260726-supabase"
+    />
+  </head>
+  <body class="app-page account-page" data-page="account">
+    <a class="skip-link" href="#main">Skip to account content</a>
+
+    <header
+      class="site-header shell"
+      aria-label="Main navigation"
+      data-site-header
+    >
+      <a class="brand serif" href="./index.html#top" aria-label="MoonTale home">
+        <span class="brand-moon" aria-hidden="true">☾</span>
+        <span>MoonTale</span>
+      </a>
+
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <ul class="primary-nav-list">
+          <li>
+            <a
+              class="primary-nav-link"
+              href="./story-builder.html"
+              data-nav-link
+              data-nav-page="builder"
+              >Create a Story</a
+            >
+          </li>
+          <li>
+            <a
+              class="primary-nav-link"
+              href="./index.html#how-it-works"
+              data-nav-link
+              data-nav-section="how-it-works"
+              >How It Works</a
+            >
+          </li>
+          <li>
+            <a
+              class="primary-nav-link"
+              href="./index.html#language-learning"
+              data-nav-link
+              data-nav-section="language-learning"
+              >Language Learning</a
+            >
+          </li>
+          <li>
+            <a
+              class="primary-nav-link"
+              href="./index.html#about"
+              data-nav-link
+              data-nav-section="about"
+              >About MoonTale</a
+            >
+          </li>
+          <li class="primary-nav-item nav-dropdown" data-nav-dropdown>
+            <button
+              class="primary-nav-button"
+              type="button"
+              aria-expanded="false"
+              aria-controls="legal-menu"
+              data-legal-menu-button
+              data-nav-legal-trigger
+            >
+              <span>Legal</span>
+              <span class="dropdown-arrow" aria-hidden="true"></span>
+            </button>
+            <ul class="legal-dropdown" id="legal-menu" data-legal-menu>
+              <li><a href="./legal/" data-nav-link>Legal Center</a></li>
+              <li>
+                <a href="./legal/privacy/" data-nav-link>Privacy Policy</a>
+              </li>
+              <li><a href="./legal/terms/" data-nav-link>Terms of Use</a></li>
+              <li>
+                <a href="./legal/cookies/" data-nav-link>Cookie Policy</a>
+              </li>
+              <li>
+                <a href="./legal/ip-infringement/" data-nav-link
+                  >Intellectual Property Policy</a
+                >
+              </li>
+              <li>
+                <a href="./legal/legal-notice/" data-nav-link>Legal Notice</a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a
+              class="primary-nav-link"
+              href="./index.html#contact"
+              data-nav-link
+              data-nav-section="contact"
+              >Contact</a
+            >
+          </li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button
+          class="mobile-nav-toggle"
+          type="button"
+          aria-label="Open navigation menu"
+          aria-expanded="false"
+          aria-controls="mobile-navigation"
+          data-mobile-menu-toggle
+        >
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="mobile-nav-overlay" data-mobile-menu-overlay hidden></div>
+      <aside
+        class="mobile-nav-drawer"
+        id="mobile-navigation"
+        aria-label="Mobile navigation"
+        data-mobile-menu
+        hidden
+      >
+        <div class="mobile-nav-header">
+          <p class="mobile-nav-title">Menu</p>
+          <button
+            class="mobile-nav-close"
+            type="button"
+            aria-label="Close navigation menu"
+            data-mobile-menu-close
+          >
+            ×
+          </button>
+        </div>
+        <nav aria-label="Mobile navigation">
+          <ul class="mobile-nav-list">
+            <li>
+              <a
+                class="mobile-nav-link"
+                href="./story-builder.html"
+                data-nav-link
+                data-nav-page="builder"
+                >Create a Story</a
+              >
+            </li>
+            <li>
+              <a
+                class="mobile-nav-link"
+                href="./index.html#how-it-works"
+                data-nav-link
+                data-nav-section="how-it-works"
+                >How It Works</a
+              >
+            </li>
+            <li>
+              <a
+                class="mobile-nav-link"
+                href="./index.html#language-learning"
+                data-nav-link
+                data-nav-section="language-learning"
+                >Language Learning</a
+              >
+            </li>
+            <li>
+              <a
+                class="mobile-nav-link"
+                href="./index.html#about"
+                data-nav-link
+                data-nav-section="about"
+                >About MoonTale</a
+              >
+            </li>
+            <li>
+              <button
+                class="mobile-legal-button"
+                type="button"
+                aria-expanded="false"
+                aria-controls="mobile-legal-menu"
+                data-mobile-legal-button
+                data-nav-legal-trigger
+              >
+                <span>Legal</span>
+                <span class="dropdown-arrow" aria-hidden="true"></span>
+              </button>
+              <ul
+                class="mobile-legal-list"
+                id="mobile-legal-menu"
+                data-mobile-legal-panel
+                hidden
+              >
+                <li><a href="./legal/" data-nav-link>Legal Center</a></li>
+                <li>
+                  <a href="./legal/privacy/" data-nav-link>Privacy Policy</a>
+                </li>
+                <li>
+                  <a href="./legal/terms/" data-nav-link>Terms of Use</a>
+                </li>
+                <li>
+                  <a href="./legal/cookies/" data-nav-link>Cookie Policy</a>
+                </li>
+                <li>
+                  <a href="./legal/ip-infringement/" data-nav-link
+                    >Intellectual Property Policy</a
+                  >
+                </li>
+                <li>
+                  <a href="./legal/legal-notice/" data-nav-link>Legal Notice</a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a
+                class="mobile-nav-link"
+                href="./index.html#contact"
+                data-nav-link
+                data-nav-section="contact"
+                >Contact</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </aside>
+    </header>
+
+    <main class="account-main shell" id="main">
+      <section class="account-hero" aria-labelledby="account-title">
+        <div>
+          <p class="eyebrow">Parent account</p>
+          <h1 class="serif" id="account-title">
+            Keep each little reader’s world close
+          </h1>
+          <p class="account-lead">
+            Sign in to create private child profiles with a nickname, age
+            group, languages, and interests. The story builder still works
+            without an account.
+          </p>
+        </div>
+        <div class="account-moon-card" aria-hidden="true">
+          <span class="account-moon">☾</span>
+          <span class="account-star account-star-one">✦</span>
+          <span class="account-star account-star-two">✧</span>
+          <p>One calm place for every story journey</p>
+        </div>
+      </section>
+
+      <noscript>
+        <p class="account-status" data-tone="error">
+          JavaScript is required for accounts and saved child profiles. You can
+          still use the anonymous story builder.
+        </p>
+      </noscript>
+
+      <p
+        class="account-status"
+        id="account-status"
+        role="status"
+        aria-live="polite"
+      >
+        Loading your account…
+      </p>
+
+      <section
+        class="account-auth-grid"
+        id="signed-out"
+        aria-label="Sign in or create an account"
+        hidden
+      >
+        <article class="account-panel">
+          <p class="eyebrow">Welcome back</p>
+          <h2 class="serif">Sign in</h2>
+          <p class="account-panel-copy">
+            Your session will remain available on this browser until you sign
+            out or it expires.
+          </p>
+          <form class="account-form" id="login-form">
+            <label class="field">
+              Email
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                required
+              />
+            </label>
+            <label class="field">
+              Password
+              <input
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+            <button
+              class="button button-primary"
+              type="submit"
+              data-account-control
+              data-loading-label="Signing in…"
+              disabled
+            >
+              Sign in
+            </button>
+          </form>
+
+          <details class="account-details">
+            <summary>Forgot your password?</summary>
+            <form class="account-form compact" id="forgot-password-form">
+              <label class="field">
+                Account email
+                <input
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  inputmode="email"
+                  required
+                />
+              </label>
+              <button
+                class="button button-secondary"
+                type="submit"
+                data-account-control
+                data-loading-label="Sending link…"
+                disabled
+              >
+                Send reset link
+              </button>
+            </form>
+          </details>
+        </article>
+
+        <article class="account-panel account-register-panel">
+          <p class="eyebrow">New to MoonTale?</p>
+          <h2 class="serif">Create a parent account</h2>
+          <p class="account-panel-copy">
+            Email confirmation is required. We will send a link that returns
+            you to this page.
+          </p>
+          <form class="account-form" id="signup-form">
+            <label class="field">
+              Email
+              <input
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                required
+              />
+            </label>
+            <label class="field">
+              Password
+              <input
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                minlength="10"
+                aria-describedby="signup-password-help"
+                required
+              />
+              <span class="account-field-help" id="signup-password-help"
+                >Use at least 10 characters.</span
+              >
+            </label>
+            <label class="field">
+              Confirm password
+              <input
+                name="password_confirmation"
+                type="password"
+                autocomplete="new-password"
+                minlength="10"
+                required
+              />
+            </label>
+            <label class="account-consent">
+              <input name="adult_confirmation" type="checkbox" required />
+              <span
+                >I am a parent, guardian, or authorised caregiver and agree to
+                the <a href="./legal/terms/">Terms of Use</a> and
+                <a href="./legal/privacy/">Privacy Policy</a>.</span
+              >
+            </label>
+            <button
+              class="button button-primary"
+              type="submit"
+              data-account-control
+              data-loading-label="Creating account…"
+              disabled
+            >
+              Create account
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section
+        class="account-panel account-recovery-panel"
+        id="password-recovery"
+        aria-labelledby="recovery-title"
+        hidden
+      >
+        <p class="eyebrow">Account recovery</p>
+        <h2 class="serif" id="recovery-title">Set a new password</h2>
+        <p class="account-panel-copy">
+          Choose a new password for the account linked from your recovery
+          email.
+        </p>
+        <form class="account-form" id="new-password-form">
+          <label class="field">
+            New password
+            <input
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="10"
+              required
+            />
+          </label>
+          <label class="field">
+            Confirm new password
+            <input
+              name="password_confirmation"
+              type="password"
+              autocomplete="new-password"
+              minlength="10"
+              required
+            />
+          </label>
+          <button
+            class="button button-primary"
+            type="submit"
+            data-account-control
+            data-loading-label="Updating password…"
+            disabled
+          >
+            Update password
+          </button>
+        </form>
+      </section>
+
+      <section id="signed-in" hidden>
+        <section
+          class="account-panel account-summary"
+          aria-labelledby="signed-in-title"
+        >
+          <div>
+            <p class="eyebrow">Your parent account</p>
+            <h2 class="serif" id="signed-in-title">
+              Signed in as <span id="account-email"></span>
+            </h2>
+          </div>
+          <button
+            class="button button-secondary"
+            id="logout-button"
+            type="button"
+            data-account-control
+            disabled
+          >
+            Sign out
+          </button>
+        </section>
+
+        <section
+          class="account-panel account-profiles-panel"
+          aria-labelledby="profiles-title"
+        >
+          <div class="account-section-heading">
+            <div>
+              <p class="eyebrow">Private child profiles</p>
+              <h2 class="serif" id="profiles-title">Your little readers</h2>
+              <p class="account-panel-copy">
+                Profiles are stored only after you create or update them here.
+                Signing in never uploads existing browser story data.
+              </p>
+            </div>
+            <button
+              class="button button-primary"
+              id="add-profile-button"
+              type="button"
+              data-account-control
+              disabled
+            >
+              Add child profile
+            </button>
+          </div>
+
+          <p
+            class="account-inline-status"
+            id="profile-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+
+          <div class="account-profile-empty" id="profile-empty" hidden>
+            <span aria-hidden="true">✦</span>
+            <h3 class="serif">No child profiles yet</h3>
+            <p>
+              Add a nickname and age group to create the first private profile.
+            </p>
+          </div>
+
+          <ul
+            class="account-profile-list"
+            id="profile-list"
+            aria-label="Saved child profiles"
+            aria-busy="false"
+          ></ul>
+
+          <form
+            class="account-profile-form"
+            id="profile-form"
+            aria-labelledby="profile-form-heading"
+            hidden
+          >
+            <div class="account-section-heading account-form-heading">
+              <div>
+                <p class="eyebrow">Profile details</p>
+                <h3 class="serif" id="profile-form-heading">
+                  Create child profile
+                </h3>
+              </div>
+              <button
+                class="account-text-button"
+                id="cancel-profile-button"
+                type="button"
+                data-account-control
+                disabled
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div class="account-profile-fields">
+              <label class="field">
+                Child nickname
+                <input
+                  name="nickname"
+                  type="text"
+                  autocomplete="off"
+                  maxlength="80"
+                  aria-describedby="nickname-help"
+                  required
+                />
+                <span class="account-field-help" id="nickname-help"
+                  >Use a nickname, not a full legal name.</span
+                >
+              </label>
+
+              <label class="field">
+                Age group
+                <select name="age_group" required>
+                  <option value="">Choose an age group</option>
+                  <option value="0-2">0–2 years</option>
+                  <option value="3-5">3–5 years</option>
+                  <option value="6-8">6–8 years</option>
+                  <option value="9-12">9–12 years</option>
+                  <option value="13-15">13–15 years</option>
+                  <option value="16-17">16–17 years</option>
+                </select>
+              </label>
+
+              <label class="field">
+                Home language
+                <select name="native_language" required>
+                  <option value="">Choose a language</option>
+                  <option value="en">English</option>
+                  <option value="pl">Polish</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                </select>
+              </label>
+
+              <label class="field">
+                Learning language
+                <select name="target_language" required>
+                  <option value="">Choose a language</option>
+                  <option value="en">English</option>
+                  <option value="pl">Polish</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                </select>
+              </label>
+
+              <label class="field account-full-field">
+                Interests
+                <input
+                  name="interests"
+                  type="text"
+                  autocomplete="off"
+                  maxlength="1200"
+                  placeholder="Space, animals, mysteries"
+                  aria-describedby="interests-help"
+                />
+                <span class="account-field-help" id="interests-help"
+                  >Separate up to 20 interests with commas.</span
+                >
+              </label>
+            </div>
+
+            <button
+              class="button button-primary"
+              id="profile-submit"
+              type="submit"
+              data-account-control
+              data-loading-label="Saving profile…"
+              disabled
+            >
+              Save profile
+            </button>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <footer class="app-footer shell">
+      <a class="brand serif" href="./index.html" aria-label="MoonTale home">
+        <span class="brand-moon" aria-hidden="true">☾</span>
+        <span>MoonTale</span>
+      </a>
+      <p>
+        Parent-guided, private by design. The anonymous story builder remains
+        available without signing in. Contact:
+        <a href="mailto:contact@moontaleapp.com">contact@moontaleapp.com</a>.
+      </p>
+      <nav class="legal-footer-links" aria-label="Legal links">
+        <a href="./legal/privacy/">Privacy</a>
+        <a href="./legal/terms/">Terms</a>
+        <a href="./legal/cookies/">Cookies</a>
+        <a href="./legal/legal-notice/">Legal Notice</a>
+        <a href="./legal/ip-infringement/">IP Infringement</a>
+        <button
+          type="button"
+          class="text-link cookie-settings-link"
+          data-cookie-settings
+        >
+          Cookie Settings
+        </button>
+      </nav>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+    <script
+      type="module"
+      src="./assets/scripts/pages/account.js?v=20260726-supabase"
+    ></script>
+  </body>
+</html>

@@ -191,6 +191,41 @@ function clearActiveState(header) {
   });
 }
 
+function ensureAccountNavigation(header) {
+  const homeLink = header.querySelector(".brand[href]");
+  const headerActions = header.querySelector(".header-actions");
+  const mobileList = header.querySelector(".mobile-nav-list");
+  if (!homeLink) return;
+
+  const accountUrl = new URL("./account.html", homeLink.href).href;
+
+  if (headerActions && !headerActions.querySelector("[data-account-nav-link]")) {
+    const accountLink = document.createElement("a");
+    accountLink.className = "text-link header-account-link";
+    accountLink.href = accountUrl;
+    accountLink.textContent = "Account";
+    accountLink.dataset.i18n = "nav.account";
+    accountLink.dataset.navLink = "";
+    accountLink.dataset.navPage = "account";
+    accountLink.dataset.accountNavLink = "";
+    headerActions.insertBefore(accountLink, headerActions.firstChild);
+  }
+
+  if (mobileList && !mobileList.querySelector("[data-account-nav-link]")) {
+    const item = document.createElement("li");
+    const accountLink = document.createElement("a");
+    accountLink.className = "mobile-nav-link";
+    accountLink.href = accountUrl;
+    accountLink.textContent = "Account";
+    accountLink.dataset.i18n = "nav.account";
+    accountLink.dataset.navLink = "";
+    accountLink.dataset.navPage = "account";
+    accountLink.dataset.accountNavLink = "";
+    item.appendChild(accountLink);
+    mobileList.appendChild(item);
+  }
+}
+
 function setActiveLink(header, selector, currentType = "page") {
   clearActiveState(header);
   header.querySelectorAll(selector).forEach((link) => {
@@ -218,6 +253,11 @@ function updateActiveNavigation(header) {
 
   if (page === "builder" || page === "story" || path.endsWith("/story-builder.html") || path.endsWith("/story.html")) {
     setActiveLink(header, '[data-nav-page="builder"]');
+    return;
+  }
+
+  if (page === "account" || path.endsWith("/account.html")) {
+    setActiveLink(header, '[data-nav-page="account"]');
     return;
   }
 
@@ -290,6 +330,7 @@ export function initializeSiteNavigation(root = document) {
   if (!header || header.dataset.navigationInitialized === "true") return;
 
   header.dataset.navigationInitialized = "true";
+  ensureAccountNavigation(header);
   initializeDesktopDropdown(header);
   initializeMobileMenu(header);
   initializeSamePageNavigation(header);
