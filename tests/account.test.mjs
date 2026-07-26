@@ -19,8 +19,10 @@ import {
   createAuthCallbackTracker,
   getAccountRedirectUrl,
   getAuthCallbackContext,
+  getCleanAuthCallbackUrl,
   getSupabaseClient,
   updateRecoveryPassword,
+  verifyRecoveryToken,
 } from "../assets/scripts/supabase-config.js";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -62,7 +64,146 @@ test("Supabase uses the configured public project values and one persistent v2 c
   assert.equal(calls[0].options.auth.flowType, "pkce");
 });
 
-test("PKCE code callbacks are detected without relying on a recovery type parameter", async () => {
+test("valid recovery token hashes are verified as recovery OTPs", async () => {
+  const context = getAuthCallbackContext({
+    href: "https://moontaleapp.com/account.html?token_hash=valid-token-hash&type=recovery",
+  });
+  assert.deepEqual(context, {
+    errorDescription: "",
+    hasCallback: true,
+    hasCode: false,
+    isRecoveryTokenHash: true,
+    recoveryHint: true,
+    tokenHash: "valid-token-hash",
+  });
+
+  const calls = [];
+  const recoverySession = {
+    access_token: "public-test-token",
+    user: { id: "parent-1", email: "parent@example.com" },
+  };
+  const result = await verifyRecoveryToken(
+    {
+      auth: {
+        async verifyOtp(payload) {
+          calls.push(payload);
+          return {
+            data: {
+              session: recoverySession,
+              user: recoverySession.user,
+            },
+            error: null,
+          };
+        },
+      },
+    },
+    context.tokenHash,
+  );
+
+  assert.deepEqual(calls, [
+    {
+      token_hash: "valid-token-hash",
+      type: "recovery",
+    },
+  ]);
+  assert.equal(result.error, null);
+  assert.equal(result.data.session, recoverySession);
+});
+
+test("expired and invalid recovery token hashes return verification errors", async () => {
+  const errors = [
+    Object.assign(new Error("Token has expired or is invalid"), {
+      code: "otp_expired",
+    }),
+    Object.assign(new Error("Invalid token"), {
+      code: "otp_disabled",
+    }),
+  ];
+  let callIndex = 0;
+  const client = {
+    auth: {
+      async verifyOtp() {
+        const error = errors[callIndex];
+        callIndex += 1;
+        return {
+          data: { session: null, user: null },
+          error,
+        };
+      },
+    },
+  };
+
+  const expiredResult = await verifyRecoveryToken(client, "expired-token");
+  const invalidResult = await verifyRecoveryToken(client, "invalid-token");
+  assert.equal(expiredResult.error, errors[0]);
+  assert.equal(expiredResult.data.session, null);
+  assert.equal(invalidResult.error, errors[1]);
+  assert.equal(invalidResult.data.session, null);
+});
+
+test("already-used recovery token hashes return a recovery verification error", async () => {
+  const reusedError = Object.assign(
+    new Error("Token has expired or is invalid"),
+    { code: "otp_expired" },
+  );
+  const result = await verifyRecoveryToken(
+    {
+      auth: {
+        async verifyOtp(payload) {
+          assert.deepEqual(payload, {
+            token_hash: "already-used-token",
+            type: "recovery",
+          });
+          return {
+            data: { session: null, user: null },
+            error: reusedError,
+          };
+        },
+      },
+    },
+    "already-used-token",
+  );
+
+  assert.equal(result.error, reusedError);
+  assert.equal(result.data.session, null);
+});
+
+test("auth callback cleanup removes token data but preserves unrelated URL state", () => {
+  assert.equal(
+    getCleanAuthCallbackUrl({
+      href: "https://moontaleapp.com/account.html?source=email&token_hash=secret-token&type=recovery#password-help",
+    }),
+    "/account.html?source=email#password-help",
+  );
+  assert.equal(
+    getCleanAuthCallbackUrl({
+      href: "https://moontaleapp.com/account.html?source=email#access_token=secret&refresh_token=also-secret&type=recovery&panel=help",
+    }),
+    "/account.html?source=email#panel=help",
+  );
+});
+
+test("a recovery type parameter without callback material cannot activate recovery", () => {
+  const context = getAuthCallbackContext({
+    href: "https://moontaleapp.com/account.html?type=recovery",
+  });
+  assert.equal(context.hasCallback, true);
+  assert.equal(context.isRecoveryTokenHash, false);
+  assert.equal(context.recoveryHint, false);
+
+  const existingSession = {
+    user: { id: "parent-1", email: "parent@example.com" },
+  };
+  assert.equal(
+    createAuthCallbackTracker(context).resolve({
+      data: { session: existingSession },
+      error: null,
+    }).status,
+    "invalid",
+  );
+});
+
+test("PKCE code callbacks remain available for normal auth callbacks", async () => {
   const context = getAuthCallbackContext({
     href: "https://moontaleapp.com/account.html?code=pkce-code",
   });
@@ -70,7 +211,9 @@ test("PKCE code callbacks are detected without relying on a recovery type parame
     errorDescription: "",
     hasCallback: true,
     hasCode: true,
+    isRecoveryTokenHash: false,
     recoveryHint: false,
+    tokenHash: "",
   });
 
   const recoverySession = {
@@ -542,7 +685,16 @@ test("account implementation uses safe DOM rendering and includes required Supab
   assert.match(accountScript, /signUp\(/);
   assert.match(accountScript, /signInWithPassword\(/);
   assert.match(accountScript, /resetPasswordForEmail\(/);
+  assert.match(
+    config,
+    /verifyOtp\(\{\s*token_hash: tokenHash,\s*type: "recovery",\s*\}\)/,
+  );
   assert.match(config, /updateUser\(\{ password \}\)/);
+  assert.match(
+    accountScript,
+    /password-reset link is invalid, expired, or has already been used/,
+  );
+  assert.doesNotMatch(accountScript, /PKCE verifier/);
   assert.match(accountScript, /signOut\(\{ scope: "local" \}\)/);
   assert.match(accountScript, /setFormBusy/);
   assert.match(profileService, /parent_id: user\.id/);
@@ -569,17 +721,25 @@ test("account initialization registers auth recovery before other client work", 
     "state.profileService = createChildProfileService(state.client);",
     clientPosition,
   );
+  const recoveryVerificationPosition = accountScript.indexOf(
+    "await verifyRecoveryCallback();",
+    clientPosition,
+  );
   const getSessionPosition = accountScript.indexOf(
     "await state.client.auth.getSession();",
-    clientPosition,
+    recoveryVerificationPosition,
   );
   const initialEventPosition = accountScript.indexOf(
     "await waitForInitialAuthEvent();",
     getSessionPosition,
   );
   const resolutionPosition = accountScript.indexOf(
-    "await resolveInitialAuthState(sessionResult);",
+    "await resolveInitialAuthState(sessionResult, recoveryResult);",
     initialEventPosition,
+  );
+  const controlsEnabledPosition = accountScript.indexOf(
+    "enableAccountControls();",
+    resolutionPosition,
   );
   const initializeEndPosition = accountScript.indexOf(
     'document.addEventListener("DOMContentLoaded"',
@@ -593,9 +753,11 @@ test("account initialization registers auth recovery before other client work", 
   assert.ok(clientPosition > -1);
   assert.ok(listenerPosition > clientPosition);
   assert.ok(listenerPosition < profileServicePosition);
-  assert.ok(listenerPosition < getSessionPosition);
+  assert.ok(listenerPosition < recoveryVerificationPosition);
+  assert.ok(recoveryVerificationPosition < getSessionPosition);
   assert.ok(initialEventPosition > getSessionPosition);
   assert.ok(resolutionPosition > initialEventPosition);
+  assert.ok(controlsEnabledPosition > resolutionPosition);
   assert.equal(initializationBody.includes("cleanAuthUrl();"), false);
   assert.match(
     accountScript,

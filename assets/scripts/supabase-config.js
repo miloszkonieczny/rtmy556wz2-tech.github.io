@@ -6,6 +6,23 @@ export const SUPABASE_PUBLISHABLE_KEY =
 
 let supabaseClient = null;
 
+const AUTH_SEARCH_PARAMETERS = [
+  "code",
+  "error",
+  "error_code",
+  "error_description",
+  "token_hash",
+  "type",
+];
+const AUTH_HASH_PARAMETERS = [
+  "access_token",
+  "expires_at",
+  "expires_in",
+  "refresh_token",
+  "token_type",
+  ...AUTH_SEARCH_PARAMETERS,
+];
+
 export function getAuthCallbackContext(location = globalThis.location) {
   if (!location?.href) {
     throw new Error("The auth callback requires a browser location.");
@@ -22,17 +39,46 @@ export function getAuthCallbackContext(location = globalThis.location) {
     "";
   const hasCode = search.has("code");
   const hasTokens = hash.has("access_token");
-  const recoveryHint =
+  const tokenHash = search.get("token_hash") || hash.get("token_hash") || "";
+  const isRecoveryType =
     search.get("type") === "recovery" || hash.get("type") === "recovery";
+  const recoveryHint = Boolean(
+    isRecoveryType &&
+      (hasCode || hasTokens || tokenHash || errorDescription),
+  );
+  const isRecoveryTokenHash = Boolean(tokenHash && isRecoveryType);
 
   return Object.freeze({
     errorDescription,
     hasCallback: Boolean(
-      hasCode || hasTokens || errorDescription || recoveryHint,
+      hasCode || hasTokens || tokenHash || errorDescription || isRecoveryType,
     ),
     hasCode,
+    isRecoveryTokenHash,
     recoveryHint,
+    tokenHash,
   });
+}
+
+export function getCleanAuthCallbackUrl(location = globalThis.location) {
+  if (!location?.href) {
+    throw new Error("The auth callback cleanup requires a browser location.");
+  }
+
+  const url = new URL(location.href);
+  AUTH_SEARCH_PARAMETERS.forEach((name) => url.searchParams.delete(name));
+
+  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const hasHashAuthParameter = AUTH_HASH_PARAMETERS.some((name) =>
+    hash.has(name),
+  );
+  if (hasHashAuthParameter) {
+    AUTH_HASH_PARAMETERS.forEach((name) => hash.delete(name));
+    const remainingHash = hash.toString();
+    url.hash = remainingHash ? `#${remainingHash}` : "";
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 export function createAuthCallbackTracker(context) {
@@ -154,6 +200,20 @@ export function getSupabaseClient(scope = globalThis) {
   });
 
   return supabaseClient;
+}
+
+export async function verifyRecoveryToken(client, tokenHash) {
+  if (typeof client?.auth?.verifyOtp !== "function") {
+    throw new Error("A Supabase auth client is required.");
+  }
+  if (typeof tokenHash !== "string" || !tokenHash.trim()) {
+    throw new Error("A password-recovery token hash is required.");
+  }
+
+  return client.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "recovery",
+  });
 }
 
 export async function updateRecoveryPassword(client, password) {

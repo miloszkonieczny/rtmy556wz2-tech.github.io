@@ -12,9 +12,11 @@ import {
   createAuthCallbackTracker,
   getAccountRedirectUrl,
   getAuthCallbackContext,
+  getCleanAuthCallbackUrl,
   getSupabaseClient,
   updateRecoveryPassword,
-} from "../supabase-config.js?v=20260726-recovery";
+  verifyRecoveryToken,
+} from "../supabase-config.js?v=20260726-token-recovery";
 
 const elements = {
   pageStatus: document.querySelector("#account-status"),
@@ -43,6 +45,7 @@ const state = {
   recoveryMode: false,
   intentionalSignOut: false,
   authCallbackPending: false,
+  authCallbackContext: null,
   authCallbackTracker: null,
   authInitializationComplete: false,
   invalidCallbackActive: false,
@@ -101,42 +104,14 @@ function enableAccountControls() {
   });
 }
 
-function callbackParameters() {
-  const url = new URL(window.location.href);
-  const search = url.searchParams;
-  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-  return { url, search, hash };
-}
-
 function cleanAuthUrl() {
-  const { url, search, hash } = callbackParameters();
-  const authParameters = [
-    "code",
-    "error",
-    "error_code",
-    "error_description",
-    "type",
-  ];
-  const hasSearchAuthParameter = authParameters.some((name) =>
-    search.has(name),
-  );
-  const hasHashAuthParameter = [
-    "access_token",
-    "refresh_token",
-    "expires_at",
-    "expires_in",
-    "token_type",
-    ...authParameters,
-  ].some((name) => hash.has(name));
+  const cleanUrl = getCleanAuthCallbackUrl(window.location);
+  const currentUrl =
+    `${window.location.pathname}${window.location.search}` +
+    window.location.hash;
+  if (cleanUrl === currentUrl) return;
 
-  if (!hasSearchAuthParameter && !hasHashAuthParameter) return;
-  authParameters.forEach((name) => search.delete(name));
-  if (hasHashAuthParameter) url.hash = "";
-  window.history.replaceState(
-    {},
-    document.title,
-    `${url.pathname}${url.search}${url.hash}`,
-  );
+  window.history.replaceState({}, document.title, cleanUrl);
 }
 
 function authErrorMessage(error, context) {
@@ -357,7 +332,7 @@ async function expireSession() {
   await state.client.auth.signOut({ scope: "local" }).catch(() => {});
 }
 
-async function showInvalidAuthCallback(session) {
+async function showInvalidAuthCallback(session, { recovery = false } = {}) {
   state.invalidCallbackActive = true;
   state.authCallbackPending = false;
   state.recoveryMode = false;
@@ -365,7 +340,9 @@ async function showInvalidAuthCallback(session) {
   showAccountView("signed-out");
   setMessage(
     elements.pageStatus,
-    "This confirmation or password-recovery link is invalid or has expired. If you requested a password reset, request a new link and open it in the same browser so its secure PKCE verifier is available.",
+    recovery
+      ? "This password-reset link is invalid, expired, or has already been used. Request a new reset link and try again."
+      : "This confirmation link is invalid or has expired. Request a new link and try again.",
     "error",
   );
 
@@ -422,10 +399,11 @@ async function loadProfiles(user) {
 async function applyAuthState(event, session) {
   if (event === "PASSWORD_RECOVERY") {
     if (!session?.user) {
-      await showInvalidAuthCallback(null);
+      await showInvalidAuthCallback(null, { recovery: true });
       return;
     }
     state.recoveryMode = true;
+    state.authCallbackPending = false;
     state.user = session.user;
     showAccountView("recovery");
     setMessage(
@@ -899,7 +877,48 @@ async function waitForInitialAuthEvent() {
   if (timeoutId) window.clearTimeout(timeoutId);
 }
 
-async function resolveInitialAuthState(sessionResult) {
+async function verifyRecoveryCallback() {
+  if (!state.authCallbackContext.isRecoveryTokenHash) return null;
+
+  setMessage(elements.pageStatus, "Verifying your password-reset link…");
+
+  try {
+    const result = await verifyRecoveryToken(
+      state.client,
+      state.authCallbackContext.tokenHash,
+    );
+    if (!result.error && result.data?.session?.user) {
+      state.authCallbackTracker.observe("PASSWORD_RECOVERY", result.data.session);
+    }
+    return result;
+  } catch (error) {
+    console.error("MoonTale password recovery verification failed", error);
+    return {
+      data: { session: null, user: null },
+      error,
+    };
+  }
+}
+
+async function resolveInitialAuthState(sessionResult, recoveryResult) {
+  if (state.authCallbackContext.isRecoveryTokenHash) {
+    const recoverySession = recoveryResult?.data?.session || null;
+    if (recoveryResult?.error || !recoverySession?.user) {
+      await showInvalidAuthCallback(sessionResult.data?.session || null, {
+        recovery: true,
+      });
+    } else {
+      state.recoveryMode = true;
+      state.authCallbackPending = false;
+      await applyAuthState("PASSWORD_RECOVERY", recoverySession);
+      cleanAuthUrl();
+    }
+
+    state.initialSessionHandled = true;
+    state.authInitializationComplete = true;
+    return;
+  }
+
   const resolution = state.authCallbackTracker.resolve(sessionResult);
 
   if (resolution.status === "recovery" && resolution.session?.user) {
@@ -913,7 +932,9 @@ async function resolveInitialAuthState(sessionResult) {
     await applyAuthState("SIGNED_IN", resolution.session);
     cleanAuthUrl();
   } else if (resolution.status === "invalid") {
-    await showInvalidAuthCallback(resolution.session);
+    await showInvalidAuthCallback(resolution.session, {
+      recovery: state.authCallbackContext.recoveryHint,
+    });
   } else {
     await applyAuthState("INITIAL_SESSION", resolution.session);
     if (resolution.error) {
@@ -936,6 +957,7 @@ async function initializeAccountPage() {
 
   try {
     const callbackContext = getAuthCallbackContext();
+    state.authCallbackContext = callbackContext;
     state.authCallbackTracker = createAuthCallbackTracker(callbackContext);
     state.authCallbackPending = callbackContext.hasCallback;
     state.recoveryMode = callbackContext.recoveryHint;
@@ -955,11 +977,12 @@ async function initializeAccountPage() {
 
   wireAuthenticationForms();
   wireProfileControls();
-  enableAccountControls();
 
+  const recoveryResult = await verifyRecoveryCallback();
   const sessionResult = await state.client.auth.getSession();
   await waitForInitialAuthEvent();
-  await resolveInitialAuthState(sessionResult);
+  await resolveInitialAuthState(sessionResult, recoveryResult);
+  enableAccountControls();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
