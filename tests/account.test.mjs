@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  AGE_GROUPS,
   CHILD_PROFILE_COLUMNS,
   ProfileSessionError,
   childProfilePayload,
@@ -90,6 +91,22 @@ test("child-profile payload uses the exact database fields and normalizes safe v
       "updated_at",
     ],
   );
+});
+
+test("frontend age groups exactly match the child_profiles database constraint", () => {
+  const expectedAgeGroups = ["3-5", "6-8", "9-11", "12+"];
+  assert.deepEqual(Object.keys(AGE_GROUPS), expectedAgeGroups);
+
+  const html = readProjectFile("account.html");
+  const ageGroupSelect = html.match(
+    /<select name="age_group" required>([\s\S]*?)<\/select>/,
+  );
+  assert.ok(ageGroupSelect);
+
+  const optionValues = [
+    ...ageGroupSelect[1].matchAll(/<option value="([^"]*)"/g),
+  ].map((match) => match[1]);
+  assert.deepEqual(optionValues, ["", ...expectedAgeGroups]);
 });
 
 test("child-profile validation rejects invalid or excessive data", () => {
@@ -214,7 +231,7 @@ test("profile list, update and delete operations remain scoped to the authentica
     id: "profile-1",
     parent_id: "parent-1",
     nickname: "Nova",
-    age_group: "9-12",
+    age_group: "9-11",
     native_language: "pl",
     target_language: "de",
     interests: ["Robots"],
@@ -269,7 +286,7 @@ test("profile list, update and delete operations remain scoped to the authentica
   assert.deepEqual(await service.list(), []);
   await service.update("profile-1", {
     nickname: "Nova",
-    age_group: "9-12",
+    age_group: "9-11",
     native_language: "pl",
     target_language: "de",
     interests: "Robots",

@@ -1,10 +1,8 @@
 export const AGE_GROUPS = Object.freeze({
-  "0-2": "0–2 years",
   "3-5": "3–5 years",
   "6-8": "6–8 years",
-  "9-12": "9–12 years",
-  "13-15": "13–15 years",
-  "16-17": "16–17 years",
+  "9-11": "9–11 years",
+  "12+": "12+ years",
 });
 
 export const PROFILE_LANGUAGES = Object.freeze({
