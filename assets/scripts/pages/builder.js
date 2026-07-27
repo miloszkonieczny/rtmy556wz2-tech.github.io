@@ -14,7 +14,157 @@ import { readStoredProfile, writeStoredProfile } from "../core/storage.js";
 import { trackStoryBuilderStart, trackStoryGenerated, trackWaitlistSubmission } from "../core/analytics.js";
 import { buildMinimalWaitlistPayload, postMinimalWaitlistToFormspree } from "../services/formspree.js";
 import { fillFormFromProfile, getFormProfile } from "../services/story-profile.js?v=20260724-story-fix";
+import {
+  createChildProfileService,
+  languageLabel,
+} from "../services/child-profiles.js";
 
+import {
+  getSupabaseClient,
+} from "../supabase-config.js?v=20260726-token-recovery";
+
+const PROFILE_AGE_TO_STORY_AGE = Object.freeze({
+  "3-5": "4",
+  "6-8": "7",
+  "9-11": "10",
+  "12+": "10",
+});
+
+function profileToBuilderValues(profile) {
+  return {
+    childName: profile.nickname || "",
+
+    childAge:
+      PROFILE_AGE_TO_STORY_AGE[profile.age_group] || "",
+
+    currentLanguage:
+      languageLabel(profile.native_language),
+
+    targetLanguage:
+      languageLabel(profile.target_language),
+
+    interest: Array.isArray(profile.interests)
+      ? profile.interests[0] || ""
+      : "",
+  };
+}
+
+async function initializeSavedProfileSelector(
+  form,
+  preferredProfileId = "",
+) {
+  const panel =
+    document.querySelector("#saved-profile-panel");
+
+  const selector =
+    document.querySelector("#saved-child-profile");
+
+  const status =
+    document.querySelector("#saved-profile-status");
+
+  if (!panel || !selector || !status) {
+    return;
+  }
+
+  selector.disabled = true;
+
+  try {
+    const client = getSupabaseClient();
+
+    const sessionResult =
+      await client.auth.getSession();
+
+    if (sessionResult.error) {
+      throw sessionResult.error;
+    }
+
+    if (!sessionResult.data.session?.user) {
+      return;
+    }
+
+    panel.hidden = false;
+
+    const profileService =
+      createChildProfileService(client);
+
+    const profiles =
+      await profileService.list();
+
+    if (!profiles.length) {
+      status.textContent =
+        "No saved child profiles yet. Create one from the account page.";
+
+      return;
+    }
+
+    profiles.forEach((profile) => {
+      const option =
+        document.createElement("option");
+
+      option.value = profile.id;
+      option.textContent = profile.nickname;
+
+      selector.appendChild(option);
+    });
+
+    selector.disabled = false;
+
+    status.textContent =
+      `${profiles.length} saved child profile` +
+      `${profiles.length === 1 ? "" : "s"} available.`;
+
+    selector.addEventListener("change", () => {
+      const selectedProfile = profiles.find(
+        (profile) =>
+          profile.id === selector.value,
+      );
+
+      if (!selectedProfile) {
+        status.textContent =
+          "Enter the child details manually.";
+
+        return;
+      }
+
+      fillFormFromProfile(
+        form,
+        profileToBuilderValues(selectedProfile),
+      );
+
+      syncLanguageFormFields();
+
+      status.textContent =
+        `${selectedProfile.nickname}'s saved details were loaded.`;
+    });
+
+    const preferredProfile = profiles.find(
+      (profile) =>
+        profile.id === preferredProfileId,
+    );
+
+    if (preferredProfile) {
+      selector.value = preferredProfile.id;
+      selector.dispatchEvent(
+        new Event("change"),
+      );
+    } else if (profiles.length === 1) {
+      selector.value = profiles[0].id;
+      selector.dispatchEvent(
+        new Event("change"),
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "MoonTale saved profile loading failed.",
+      error,
+    );
+
+    panel.hidden = false;
+
+    status.textContent =
+      "Saved profiles could not be loaded. You can still enter details manually.";
+  }
+}
 function setFieldError(field, key) {
   const wrapper = field.closest(".field");
   const error = wrapper ? wrapper.querySelector(".field-error") : null;
@@ -88,8 +238,15 @@ function initializeBuilderPage() {
   const emailField = form.elements.email;
   let currentStep = 0;
 
-  fillFormFromProfile(form, readStoredProfile());
-  syncLanguageFormFields();
+ const storedProfile = readStoredProfile();
+
+fillFormFromProfile(form, storedProfile);
+syncLanguageFormFields();
+
+void initializeSavedProfileSelector(
+  form,
+  storedProfile?.childProfileId,
+);
 
   function syncMarketingEmailRequirement() {
     if (!emailField || !marketingConsent) return;
@@ -139,8 +296,14 @@ function initializeBuilderPage() {
     syncMarketingEmailRequirement();
     if (!validateStep(steps[currentStep])) return;
 
-    const profile = getFormProfile(form);
-    writeStoredProfile(profile);
+    const profile = {
+  ...getFormProfile(form),
+
+  childProfileId:
+    form.elements.savedChildProfile?.value || "",
+};
+
+writeStoredProfile(profile);
     trackStoryGenerated();
 
     generateButton.disabled = true;
