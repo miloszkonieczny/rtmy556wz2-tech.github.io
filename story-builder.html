@@ -199,19 +199,25 @@
             </p>
 
             <div class="form-grid">
-              <label class="field">
-                <span>Child's nickname</span>
-                <input
-                  name="childName"
-                  type="text"
-                  autocomplete="off"
-                  maxlength="30"
-                  placeholder="e.g. Emma or Little Star"
-                  required
-                />
-                <small class="field-helper">Use a nickname, not a full legal name. Do not enter sensitive information.</small>
-                <small class="field-error"></small>
-              </label>
+              <label class="field" id="parent-email-field">
+  <span>Parent email for updates (optional)</span>
+  <input
+    type="email"
+    name="email"
+    autocomplete="email"
+    placeholder="you@example.com"
+  />
+  <small class="field-error"></small>
+</label>
+
+<p
+  class="microcopy"
+  id="account-email-note"
+  role="status"
+  hidden
+>
+  If you choose product updates, MoonTale will use your account email.
+</p>
 
               <label class="field">
                 <span data-i18n="builder.fields.childAge">Child's age</span>
