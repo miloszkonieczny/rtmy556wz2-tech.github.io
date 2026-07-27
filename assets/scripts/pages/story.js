@@ -10,6 +10,9 @@ import { generateStory } from "../services/story-generator.js?v=20260724-story-f
 import { createStoryService } from "../services/stories.js";
 import { getSupabaseClient } from "../supabase-config.js?v=20260726-token-recovery";
 
+const ACCOUNT_STORY_SAVE_KEY_PREFIX =
+  "moontaleAccountStorySave:";
+
 function renderVocabularyList(vocabularyList, vocabulary) {
   if (!vocabularyList) return;
 
@@ -42,10 +45,37 @@ function storyVocabularyWords(story) {
     .filter(Boolean);
 }
 
+function accountSaveKey(profile) {
+  const generationId = String(
+    profile.storyGenerationId || "",
+  ).trim();
+
+  return generationId
+    ? `${ACCOUNT_STORY_SAVE_KEY_PREFIX}${generationId}`
+    : "";
+}
+
 async function saveStoryToAccount(story, profile) {
   if (!profile.childProfileId) {
     return;
   }
+
+  const saveKey = accountSaveKey(profile);
+
+  if (!saveKey) {
+    return;
+  }
+
+  const currentStatus = localStorage.getItem(saveKey);
+
+  if (
+    currentStatus === "saving" ||
+    currentStatus === "saved"
+  ) {
+    return;
+  }
+
+  localStorage.setItem(saveKey, "saving");
 
   try {
     const client = getSupabaseClient();
@@ -55,6 +85,7 @@ async function saveStoryToAccount(story, profile) {
       sessionResult.error ||
       !sessionResult.data.session?.user
     ) {
+      localStorage.removeItem(saveKey);
       return;
     }
 
@@ -70,7 +101,11 @@ async function saveStoryToAccount(story, profile) {
         profile.targetLanguage,
       vocabulary: storyVocabularyWords(story),
     });
+
+    localStorage.setItem(saveKey, "saved");
   } catch (error) {
+    localStorage.removeItem(saveKey);
+
     console.warn(
       "MoonTale account story saving failed.",
       error,
