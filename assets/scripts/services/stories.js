@@ -9,6 +9,13 @@ const STORY_COLUMNS = [
   "created_at",
 ].join(",");
 
+export class StorySessionError extends Error {
+  constructor(message = "A signed-in parent account is required.") {
+    super(message);
+    this.name = "StorySessionError";
+  }
+}
+
 function requiredText(value, fieldName) {
   const cleaned = String(value || "").trim();
 
@@ -29,12 +36,48 @@ function normalizeVocabulary(vocabulary) {
     .filter(Boolean);
 }
 
+async function requireSignedInUser(client) {
+  const userResult = await client.auth.getUser();
+
+  if (
+    userResult.error ||
+    !userResult.data?.user?.id
+  ) {
+    throw new StorySessionError();
+  }
+
+  return userResult.data.user;
+}
+
 export function createStoryService(client) {
   if (!client?.auth || typeof client.from !== "function") {
     throw new Error("A Supabase client is required.");
   }
 
   return Object.freeze({
+    async list({ childId = "" } = {}) {
+      await requireSignedInUser(client);
+
+      let query = client
+        .from("stories")
+        .select(STORY_COLUMNS)
+        .order("created_at", { ascending: false });
+
+      const normalizedChildId = String(childId || "").trim();
+
+      if (normalizedChildId) {
+        query = query.eq("child_id", normalizedChildId);
+      }
+
+      const result = await query;
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return Array.isArray(result.data) ? result.data : [];
+    },
+
     async create({
       childId,
       title,
@@ -43,16 +86,7 @@ export function createStoryService(client) {
       targetLanguage,
       vocabulary = [],
     }) {
-      const userResult = await client.auth.getUser();
-
-      if (
-        userResult.error ||
-        !userResult.data?.user?.id
-      ) {
-        throw new Error(
-          "A signed-in parent account is required.",
-        );
-      }
+      await requireSignedInUser(client);
 
       const result = await client
         .from("stories")
@@ -88,6 +122,32 @@ export function createStoryService(client) {
 
       if (result.error) {
         throw result.error;
+      }
+
+      return result.data;
+    },
+
+    async remove(storyId) {
+      await requireSignedInUser(client);
+
+      const normalizedStoryId = requiredText(
+        storyId,
+        "Story",
+      );
+
+      const result = await client
+        .from("stories")
+        .delete()
+        .eq("id", normalizedStoryId)
+        .select("id")
+        .maybeSingle();
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (!result.data?.id) {
+        throw new Error("The story was not found or could not be deleted.");
       }
 
       return result.data;
