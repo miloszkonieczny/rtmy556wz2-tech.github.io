@@ -222,3 +222,40 @@ export async function updateRecoveryPassword(client, password) {
   }
   return client.auth.updateUser({ password });
 }
+
+function loadAccountStoryHistory() {
+  if (
+    typeof document === "undefined" ||
+    document.body?.dataset.page !== "account" ||
+    document.querySelector('script[data-account-stories-loader]')
+  ) {
+    return;
+  }
+
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href =
+    "./assets/styles/account-stories.css?v=20260727-account-stories";
+  document.head.appendChild(stylesheet);
+
+  const loaderMarker = document.createElement("script");
+  loaderMarker.type = "application/json";
+  loaderMarker.dataset.accountStoriesLoader = "";
+  document.head.appendChild(loaderMarker);
+
+  void import(
+    "./pages/account-stories.js?v=20260727-account-stories"
+  ).catch((error) => {
+    console.error("MoonTale account story history could not be loaded", error);
+  });
+}
+
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadAccountStoryHistory, {
+      once: true,
+    });
+  } else {
+    loadAccountStoryHistory();
+  }
+}
