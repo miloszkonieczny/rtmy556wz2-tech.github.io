@@ -173,6 +173,21 @@
           novalidate
         >
           <input type="hidden" name="websiteLanguage" id="website-language-field" value="en" />
+          <section class="saved-profile-panel" id="saved-profile-panel" hidden>
+  <label class="field" for="saved-child-profile">
+    <span>Use a saved child profile</span>
+
+    <select id="saved-child-profile" name="savedChildProfile">
+      <option value="">Enter details manually</option>
+    </select>
+  </label>
+
+  <p id="saved-profile-status" role="status" aria-live="polite"></p>
+
+  <p>
+    <a href="./account.html">Manage child profiles</a>
+  </p>
+</section>
           <h2 class="sr-only" id="builder-title" data-i18n="builder.form.title">MoonTale story builder</h2>
 
           <fieldset class="wizard-step is-active" data-step="1">
