@@ -7,6 +7,8 @@ import { initializeSiteNavigation } from "../core/navigation.js";
 import { readStoredProfile, saveGeneratedStory } from "../core/storage.js";
 import { initializeFormspreeForms } from "../services/formspree.js";
 import { generateStory } from "../services/story-generator.js?v=20260724-story-fix";
+import { createStoryService } from "../services/stories.js";
+import { getSupabaseClient } from "../supabase-config.js?v=20260726-token-recovery";
 
 function renderVocabularyList(vocabularyList, vocabulary) {
   if (!vocabularyList) return;
@@ -23,7 +25,60 @@ function renderVocabularyList(vocabularyList, vocabulary) {
   });
 }
 
-function renderStoryPage(options = {}) {
+function storyContentText(story) {
+  return [...story.paragraphs, story.ending]
+    .map((paragraph) => String(paragraph || "").trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function storyVocabularyWords(story) {
+  if (!Array.isArray(story.vocabulary)) {
+    return [];
+  }
+
+  return story.vocabulary
+    .map((item) => String(item?.word || "").trim())
+    .filter(Boolean);
+}
+
+async function saveStoryToAccount(story, profile) {
+  if (!profile.childProfileId) {
+    return;
+  }
+
+  try {
+    const client = getSupabaseClient();
+    const sessionResult = await client.auth.getSession();
+
+    if (
+      sessionResult.error ||
+      !sessionResult.data.session?.user
+    ) {
+      return;
+    }
+
+    const storyService = createStoryService(client);
+
+    await storyService.create({
+      childId: profile.childProfileId,
+      title: story.title,
+      storyContent: storyContentText(story),
+      topic: profile.interest || profile.goal || "",
+      targetLanguage:
+        story.metadata?.learningLanguage ||
+        profile.targetLanguage,
+      vocabulary: storyVocabularyWords(story),
+    });
+  } catch (error) {
+    console.warn(
+      "MoonTale account story saving failed.",
+      error,
+    );
+  }
+}
+
+async function renderStoryPage(options = {}) {
   const storyContent = document.querySelector("#story-content");
   if (!storyContent) return;
 
@@ -59,18 +114,23 @@ function renderStoryPage(options = {}) {
 
   renderVocabularyList(vocabularyList, story.vocabulary);
 
-  if (options.save !== false) saveGeneratedStory(story, profile);
+  if (options.save !== false) {
+    saveGeneratedStory(story, profile);
+    await saveStoryToAccount(story, profile);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeSiteNavigation();
   initializeCookieConsent();
   initializeLanguageSelectors({
-    onLanguageChange: () => renderStoryPage({ save: false }),
+    onLanguageChange: () => {
+      void renderStoryPage({ save: false });
+    },
   });
   updateTranslatedContent();
   initializeRevealElements();
   initializeFormspreeForms();
   initializeBrowserDataDeletionControls();
-  renderStoryPage({ save: true });
+  void renderStoryPage({ save: true });
 });
