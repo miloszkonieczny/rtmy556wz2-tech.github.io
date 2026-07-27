@@ -78,11 +78,36 @@ async function initializeSavedProfileSelector(
       throw sessionResult.error;
     }
 
-    if (!sessionResult.data.session?.user) {
-      return;
-    }
+   const signedInUser =
+  sessionResult.data.session?.user;
 
-    panel.hidden = false;
+if (!signedInUser) {
+  return;
+}
+
+const emailField =
+  form.elements.email;
+
+const emailFieldWrapper =
+  document.querySelector("#parent-email-field");
+
+const accountEmailNote =
+  document.querySelector("#account-email-note");
+
+if (signedInUser.email && emailField) {
+  emailField.value = signedInUser.email;
+  emailField.readOnly = true;
+
+  if (emailFieldWrapper) {
+    emailFieldWrapper.hidden = true;
+  }
+
+  if (accountEmailNote) {
+    accountEmailNote.hidden = false;
+  }
+}
+
+panel.hidden = false;
 
     const profileService =
       createChildProfileService(client);
