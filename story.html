@@ -180,25 +180,35 @@
         </aside>
       </article>
 
-      <section class="story-actions shell">
-        <div>
-          <p class="eyebrow" data-i18n="story.actions.eyebrow">Make tonight your own</p>
-          <h2 class="serif" data-i18n="story.actions.title">Try another magical combination.</h2>
+      <section class="story-actions shell" aria-labelledby="story-actions-title">
+        <div class="story-actions-primary">
+          <div class="story-actions-heading">
+            <p class="eyebrow" data-i18n="story.actions.eyebrow">Make tonight your own</p>
+            <h2 class="serif" id="story-actions-title" data-i18n="story.actions.title">
+              Try another magical combination.
+            </h2>
+          </div>
+          <div class="story-action-links">
+            <a class="button button-primary" href="./story-builder.html" data-i18n="story.actions.button">
+              Create Another Story
+            </a>
+            <p class="microcopy">
+              Concerned about a story? <a href="./legal/legal-notice/">Report inappropriate output</a> or review the
+              <a href="./legal/privacy/">Privacy Policy</a>.
+            </p>
+          </div>
         </div>
-        <div class="story-action-links">
-          <a class="button button-secondary" href="./story-builder.html" data-i18n="story.actions.button">Create Another Story</a>
-          <p class="microcopy">
-            Concerned about a story? <a href="./legal/legal-notice/">Report inappropriate output</a> or review
-            <a href="./legal/privacy/">privacy and deletion options</a>.
-          </p>
-          <div class="browser-data-panel" data-browser-data-panel>
+
+        <details class="story-management browser-data-panel" data-browser-data-panel>
+          <summary>Story and profile management</summary>
+          <div class="story-management-content">
             <p>
-              This deletes MoonTale story profiles and saved story previews from this browser and device only. It does
-              not delete waitlist or contact information previously submitted to MoonTale. To request deletion of that
-              information, email <a href="mailto:contact@moontaleapp.com">contact@moontaleapp.com</a>.
+              This removes locally saved MoonTale stories and profile data from this browser and device. To request
+              deletion of waitlist or contact information previously submitted to MoonTale, email
+              <a href="mailto:contact@moontaleapp.com">contact@moontaleapp.com</a>.
             </p>
             <button
-              class="button button-danger"
+              class="story-delete-action"
               type="button"
               data-delete-browser-data
               data-delete-redirect="./story-builder.html"
@@ -207,7 +217,7 @@
             </button>
             <p class="status-message" role="status" aria-live="polite" data-browser-data-status></p>
           </div>
-        </div>
+        </details>
       </section>
 
       <section class="prototype-waitlist" aria-labelledby="waitlist-title">
