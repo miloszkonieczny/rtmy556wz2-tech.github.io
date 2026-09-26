@@ -242,6 +242,12 @@ test("README reflects governed production story routing without stale local-only
   assert.doesNotMatch(readme, /No external AI provider is currently connected|Story generation currently runs in the browser using local templates/u);
 });
 
+test("materially changed legal policies show the current update date", () => {
+  for (const html of [privacy, terms, cookies]) {
+    assert.match(html, /<strong>Last updated:<\/strong> 2026-09-26/u);
+  }
+});
+
 test("public legal text reflects governed AI story processing", () => {
   const privacy = readProjectFile("legal/privacy/index.html");
   const terms = readProjectFile("legal/terms/index.html");
