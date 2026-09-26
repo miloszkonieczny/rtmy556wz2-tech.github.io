@@ -152,6 +152,13 @@
       <article class="story-layout shell">
         <div class="story-paper">
           <div class="story-opening-mark" aria-hidden="true">☾</div>
+          <div id="story-state" class="story-state" role="status" aria-live="polite" hidden>
+            <span class="story-state-spinner" aria-hidden="true"></span>
+            <p id="story-state-message"></p>
+            <button id="story-retry" class="button button-secondary" type="button" data-i18n="story.state.retry" hidden>
+              Try again
+            </button>
+          </div>
           <div id="story-content" class="story-content"></div>
           <p class="story-ending serif" data-i18n="story.ending">
             And under the quiet moon, everyone slept peacefully.
@@ -278,6 +285,6 @@
       </nav>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-    <script type="module" src="./assets/scripts/pages/story.js?v=20260727-account-stories"></script>
+    <script type="module" src="./assets/scripts/pages/story.js?v=20260817-reload-errors"></script>
   </body>
 </html>

@@ -1,208 +1,97 @@
 # MoonTale
 
-MoonTale creates personalized bedtime stories for children, combining reading, imagination and gentle language exposure.
+MoonTale creates personalized bedtime stories for children, combining parent-guided reading, imagination and gentle language exposure.
 
 ## Status
 
-MoonTale is an early-stage web prototype. It is currently used for active user testing and validation, and is deployed as a static website through GitHub Pages.
+MoonTale is an early-stage, parent-directed web prototype. The public frontend is served at `https://moontaleapp.com`. The production story-generation backend has been prepared as a governed private-pilot service at `https://api.moontaleapp.com/api/story/generate`; public route activation is a separate release step and is not implied by this repository state.
 
-Live website: https://moontaleapp.com
-Sole public contact email: contact@moontaleapp.com
+Sole public contact email: `contact@moontaleapp.com`.
+
+## Story Generation Architecture
+
+On approved production origin, MoonTale uses the governed story API rather than silently falling back to the browser template generator. Local loopback development remains available on `localhost`, `127.0.0.1` and `::1`.
+
+The browser sends a bounded story request containing the story configuration required for generation: age band, narrative and learning languages, selected character, mood, controlled interest, goal, reading time, requested vocabulary count, stable vocabulary identifiers and adult-authorization metadata. The production request deliberately excludes the child nickname, parent email, child-profile ID and browser story-generation ID.
+
+For the private pilot, production generation reuses the existing Supabase parent session. The current access token is sent only in the HTTP `Authorization` header to the MoonTale API. It is not placed in the request body, query string, analytics events or application story storage.
+
+The server authenticates the parent through Supabase Auth, applies server-controlled pilot entitlement and quota/admission controls, then runs the frozen governed story pipeline. Provider routing is server-side. Current production-candidate routing uses Groq with Cloudflare Workers AI available within the validated fallback architecture. Candidate.17 / Candidate.18 / Stage 8 safety, quality, repair, schema and finalization boundaries are not implemented in the browser and must not be bypassed by frontend changes.
+
+One deliberate generation action is designed to create exactly one story POST. There is no automatic production template fallback and no hidden same-page retry; a second request requires an explicit Retry action. A successfully accepted story is cached by generation ID so an ordinary reload does not create an accidental second generation request.
 
 ## Main Features
 
 - Personalized bedtime-story builder
 - Multiple interface languages
-- Gentle vocabulary exposure
-- Parent-selected themes and goals
-- Local browser storage for story previews
+- Parent-selected themes and learning goals
+- Governed AI story generation for authorized private-pilot sessions
+- Local accepted-story caching and saved previews
 - Optional parent authentication and private child-profile management
-- Responsive design for desktop and mobile use
-- Accessibility considerations such as semantic HTML, skip links, labels, and live status regions
+- Optional account-backed story saving for a selected child profile
+- Responsive design and semantic/accessibility support
+- Consent-gated analytics and minimal waitlist submission
 
-## Supported Languages
+## Languages
 
-- English
-- Polish
-- Spanish
-- French
-- German
+The interface supports English, Polish, Spanish, French and German. The currently validated live story-generation language set is narrower than the interface set; unsupported saved language choices are preserved for explicit correction rather than silently substituted.
 
-## Technology Overview
+## Technology
 
-- Semantic HTML
-- CSS
-- Vanilla JavaScript
-- GitHub Pages
-- Supabase Auth and the RLS-protected `child_profiles` table for optional parent accounts
-- Formspree for voluntary waitlist/product-update email submissions
-- Google Analytics tag ID `G-716GP23C93`, loaded only after optional analytics consent
-- Local browser story generation from predefined templates and vocabulary
+- Semantic HTML, CSS and browser ES modules
+- GitHub Pages for the static frontend origin
+- Cloudflare proxy/security layer and governed story Worker
+- Supabase Auth plus RLS-protected parent/child-profile and account story data
+- Groq / Cloudflare Workers AI behind server-side provider routing
+- Formspree for voluntary waitlist/product-update submissions
+- Google Analytics only after optional analytics consent
 
-No external AI provider is currently connected. MoonTale supports optional parent accounts and private child profiles, but it has no child accounts, payments, subscriptions, public profiles, comments, messaging or public user-generated-content system.
-
-MoonTale does not require a build step to run in production. The development tooling in `package.json` is optional and exists only for formatting checks and lightweight logic tests.
-The JavaScript is organized as browser ES modules, with page-specific entry points under `assets/scripts/pages/`.
+No provider API key, trust key or internal service token belongs in browser code.
 
 ## Privacy And Data Flow
 
-- Story settings and generated story previews are stored in browser localStorage under `moontaleStoryProfile` and `moontaleSavedStories`.
-- Interface language is stored under `moontaleLanguage`.
-- Cookie choice is stored under `moontaleCookieConsent`.
-- The story builder does not require an email address.
-- Supabase stores the parent account email and authenticated child profiles created explicitly on `account.html`; Row Level Security limits each parent to their own profiles.
-- Supabase Auth stores a persistent session in browser storage after sign-in. Signing out removes the local session.
-- Formspree receives only a minimal waitlist/product-update payload after adult opt-in: `email`, `source`, `adultConfirmation`, `marketingConsent`, `consentTextVersion`, and `submissionDate`.
-- Child nickname, age, interests, story settings and generated story text are not sent to Formspree.
-- Google Analytics is blocked until optional analytics consent is accepted.
-- Browser-only story/profile data can be removed with the “Delete MoonTale stories and profile” control.
-- MoonTale is adult-directed for parents, legal guardians or otherwise authorised caregivers.
-
-## Repository Structure
-
-```text
-.
-├── assets/
-│   ├── milo-moonbear.png
-│   └── scripts/
-│       ├── core/
-│       ├── pages/
-│       └── services/
-├── data/
-│   ├── legal-config.js
-│   ├── story-content.js
-│   └── vocabulary.js
-├── docs/
-│   └── legal-launch-checklist.md
-├── legal/
-│   ├── cookies/
-│   ├── ip-infringement/
-│   ├── legal-notice/
-│   ├── privacy/
-│   ├── terms/
-│   └── index.html
-├── locales/
-│   ├── en.js
-│   ├── pl.js
-│   ├── es.js
-│   ├── fr.js
-│   └── de.js
-├── tests/
-│   ├── account.test.mjs
-│   ├── legal-static.test.mjs
-│   └── moontale.test.mjs
-├── account.html
-├── index.html
-├── personalized-bedtime-stories-for-kids.html
-├── story-builder.html
-├── story.html
-├── styles.css
-├── robots.txt
-├── sitemap.xml
-├── CNAME
-├── README.md
-├── CONTRIBUTING.md
-├── SECURITY.md
-├── package.json
-├── .editorconfig
-├── .gitignore
-├── .prettierrc
-└── .prettierignore
-```
+- Story-builder configuration is stored locally so the builder and story page can complete one deliberate request.
+- Accepted stories and bounded generation/save-state markers may be stored in browser `localStorage` to prevent accidental duplicate generation or duplicate account writes.
+- A production story request goes only to `https://api.moontaleapp.com/api/story/generate` from the approved production origin.
+- The story request body excludes parent email, child nickname and child-profile ID.
+- The existing Supabase access token is used only as an Authorization bearer credential for the MoonTale API.
+- Signed-in parents may explicitly create private child profiles in Supabase. A successful generated story may be saved to the parent-controlled account when a saved child profile was selected.
+- Formspree receives only the minimal waitlist/product-update payload after adult opt-in; child profile and story content are not added to that submission.
+- Google Analytics remains consent-gated and must not receive bearer tokens, child profile data, story text or story settings.
+- Public legal pages must describe the active provider/data-flow configuration before route activation. Provider retention/transfer details must not be invented or represented as zero-retention unless independently verified.
 
 ## Local Development
 
-Because the site is static, you can preview it by opening `index.html` in a browser.
-
-For a closer GitHub Pages-style preview, run a simple local static server from the repository root:
+The frontend can be served locally with a static server, but governed local story generation expects the validated Worker path on loopback.
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then open:
+The full production candidate contains the Worker and its dedicated validation scripts. Do not point local frontend testing at the public production route unless that live test has been separately authorized.
 
-```text
-http://localhost:8080/
-```
+## Testing
 
-Optional formatting tools:
+The frontend integration is covered by focused Node tests for request construction, production-origin routing, safe error mapping, reload caching, duplicate-save prevention and browser-data cleanup. The full production candidate additionally contains Worker/security and Playwright integration suites.
+
+Typical offline checks in the full candidate include:
 
 ```bash
-npm install
-npm test
-npm run format:check
-npm run format
+npm run test:second-readiness
+npm run test:runtime-relevant
+npm run test:candidate17
+node --test tests/legal-static.test.mjs tests/story-api.test.mjs tests/integration-state.test.mjs
 ```
 
-Do not run formatting across the whole repository unless you have reviewed the resulting diff.
+Provider campaigns and deployment scripts are separate controlled operations and must not be run merely to validate frontend code.
 
-## Manual Testing Checklist
+## Release Boundary
 
-Test the main user flow before publishing changes:
-
-1. Open `index.html` and confirm the homepage loads with styling and images.
-2. Open `personalized-bedtime-stories-for-kids.html` and confirm links to the homepage and story builder work.
-3. Open `story-builder.html`.
-4. Choose each supported interface language and confirm the interface updates.
-5. Fill in the story builder form and create a story.
-6. Confirm `story.html` opens and displays the generated story.
-7. Confirm the generated story follows the selected current language.
-8. Confirm story creation works without an email address.
-9. Open `account.html` and test registration, email confirmation, sign-in, sign-out, password reset and password recovery.
-10. While signed in, create, list, edit and delete a child profile, then confirm a second account cannot access it.
-11. Confirm Formspree receives only the minimal waitlist/product-update payload when the adult opts in.
-12. Confirm the cookie banner appears for a fresh visitor, optional analytics does not load before consent, and the Cookie Settings button reopens the banner.
-13. Confirm the “Delete MoonTale stories and profile” control removes only browser story/profile data, not authenticated Supabase profiles.
-14. Confirm the legal footer links open the Privacy Policy, Terms, Cookie Policy, Legal Notice, and IP Infringement Policy.
-15. Confirm `robots.txt` and `sitemap.xml` are reachable from the site root.
-
-## Contribution Workflow
-
-Use a branch for every change. Avoid committing directly to `main`.
-
-Recommended branch examples:
-
-- `feature/separate-language-files`
-- `fix/story-language-generation`
-- `refactor/css-architecture`
-- `docs/improve-readme`
-
-Use clear, scoped commit messages:
-
-- `feat(i18n): add language configuration`
-- `fix(builder): restore continue button validation`
-- `refactor(css): separate builder styles`
-- `docs: improve project setup guide`
-- `test(story): verify selected story language`
-
-See `CONTRIBUTING.md` for more detailed guidelines.
-
-## Known Limitations
-
-- Story generation currently runs in the browser using local templates and browser storage.
-- Authenticated profile flows depend on the configured Supabase project and should be tested against the deployed site with two disposable parent accounts before release.
-- Interface language, narrative language, and learning language are resolved separately. Invalid or missing learning-language values fall back to Spanish after validation, and the fallback is exposed in story metadata.
-- Automated tests cover language resolution, translation fallback, safe storage parsing, vocabulary selection, and story generation.
-- Form submissions depend on the configured Formspree endpoint.
-- Google Analytics dashboard retention and data-sharing settings must be verified outside the repository.
-- Legal review is still needed before direct child interaction, payments, school use, native apps or new providers are added.
-- Language support is limited to the languages listed above.
-- The prototype should not be treated as medical, developmental, or educational advice.
-
-## Product Roadmap
-
-High-level areas under consideration:
-
-- More robust story quality controls
-- Improved language and vocabulary configuration
-- Better saved-story management
-- More structured accessibility testing
-- A clearer separation between content, translations, and application logic
+Frontend implementation readiness does not activate production. Before public story API activation, complete the pre-route audit, confirm public legal/privacy wording against the real provider configuration, run the required browser/account tests, and obtain explicit Founder authorization for the route change.
 
 ## Contact
 
-Public contact email: contact@moontaleapp.com
+Public contact email: `contact@moontaleapp.com`
 
 ## Copyright
 

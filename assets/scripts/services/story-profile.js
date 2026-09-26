@@ -1,4 +1,5 @@
 import {
+  languageCodeFromName,
   languageNameFromCode,
   resolveLanguageConfig,
 } from "../core/config.js?v=20260724-story-fix";
@@ -18,32 +19,31 @@ function readFieldValue(form, name) {
 
 export function getFormProfile(form) {
   const interfaceLanguage = getCurrentLanguage();
-  const languageConfig = resolveLanguageConfig(
-    {
-      currentLanguage: readFieldValue(form, "currentLanguage"),
-      targetLanguage: readFieldValue(form, "targetLanguage"),
-      websiteLanguage: interfaceLanguage,
-      interfaceLanguage,
-    },
-    interfaceLanguage,
-  );
+  const currentLanguage = String(
+    readFieldValue(form, "currentLanguage") || "",
+  ).trim();
+  const targetLanguage = String(
+    readFieldValue(form, "targetLanguage") || "",
+  ).trim();
+  const narrativeLanguage = languageCodeFromName(currentLanguage) || "";
+  const learningLanguage = languageCodeFromName(targetLanguage) || "";
 
   return {
     childName: String(readFieldValue(form, "childName") || "").trim(),
-    childAge: readFieldValue(form, "childAge"),
-    currentLanguage: languageNameFromCode(languageConfig.narrativeLanguage),
-    targetLanguage: languageNameFromCode(languageConfig.learningLanguage),
+    ageBand: readFieldValue(form, "ageBand"),
+    currentLanguage,
+    targetLanguage,
     character: readFieldValue(form, "character"),
     mood: readFieldValue(form, "mood"),
     interest: String(readFieldValue(form, "interest") || "").trim(),
     goal: readFieldValue(form, "goal"),
     readingTime: readFieldValue(form, "readingTime"),
     newWordsCount: readFieldValue(form, "newWordsCount"),
-    storyLanguage: languageConfig.narrativeLanguage,
-    narrativeLanguage: languageConfig.narrativeLanguage,
-    learningLanguage: languageConfig.learningLanguage,
-    websiteLanguage: languageConfig.interfaceLanguage,
-    interfaceLanguage: languageConfig.interfaceLanguage,
+    storyLanguage: narrativeLanguage,
+    narrativeLanguage,
+    learningLanguage,
+    websiteLanguage: interfaceLanguage,
+    interfaceLanguage,
   };
 }
 
@@ -51,10 +51,22 @@ export function fillFormFromProfile(form, profile) {
   if (!profile) return;
 
   const languageConfig = resolveLanguageConfig(profile);
+  const rawCurrentLanguage =
+    profile.currentLanguage ??
+    profile.narrativeLanguage ??
+    profile.storyLanguage;
+  const rawTargetLanguage =
+    profile.targetLanguage ?? profile.learningLanguage;
+  const currentLanguageCode = languageCodeFromName(rawCurrentLanguage);
+  const targetLanguageCode = languageCodeFromName(rawTargetLanguage);
   const formValues = {
     ...profile,
-    currentLanguage: languageNameFromCode(languageConfig.narrativeLanguage),
-    targetLanguage: languageNameFromCode(languageConfig.learningLanguage),
+    currentLanguage: currentLanguageCode
+      ? languageNameFromCode(currentLanguageCode)
+      : String(rawCurrentLanguage || "").trim(),
+    targetLanguage: targetLanguageCode
+      ? languageNameFromCode(targetLanguageCode)
+      : String(rawTargetLanguage || "").trim(),
     websiteLanguage: languageConfig.interfaceLanguage,
   };
 
@@ -70,6 +82,19 @@ export function fillFormFromProfile(form, profile) {
         if (input.value === String(value)) input.checked = true;
       });
     } else {
+      if (
+        field.tagName === "SELECT" &&
+        String(value) &&
+        !Array.from(field.options || []).some(
+          (option) => option.value === String(value),
+        )
+      ) {
+        const option = field.ownerDocument.createElement("option");
+        option.value = String(value);
+        option.textContent = String(value);
+        option.dataset.savedUnsupportedValue = "true";
+        field.appendChild(option);
+      }
       field.value = value;
     }
   });

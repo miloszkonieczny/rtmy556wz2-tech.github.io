@@ -164,7 +164,7 @@ test("public HTML does not load Google Analytics directly", () => {
   assert.match(cookieConsent, /page_path: window\.location\.pathname/);
 });
 
-test("story builder supports local story generation without email and requires adult confirmation", () => {
+test("story builder keeps email optional and requires adult confirmation", () => {
   const html = readProjectFile("story-builder.html");
   assert.match(html, /name="adultAuthorization" type="checkbox" required/);
   assert.match(html, /name="marketingConsent" type="checkbox"/);
@@ -213,7 +213,7 @@ test("minimal Formspree payload excludes child-profile and story fields", () => 
   assert.equal(formspreeScript.includes("new FormData(form)"), false);
 });
 
-test("browser-data deletion removes only MoonTale story profile and saved stories", () => {
+test("browser-data deletion removes MoonTale story/profile generation state while preserving unrelated preferences", () => {
   const values = new Map([
     [PROFILE_STORAGE_KEY, "profile"],
     [SAVED_STORIES_KEY, "stories"],
@@ -231,6 +231,51 @@ test("browser-data deletion removes only MoonTale story profile and saved storie
   assert.equal(values.has(SAVED_STORIES_KEY), false);
   assert.equal(values.get(LANGUAGE_STORAGE_KEY), "pl");
   assert.equal(values.get("moontaleCookieConsent"), "accepted");
+});
+
+test("README reflects governed production story routing without stale local-only claims", () => {
+  const readme = readProjectFile("README.md");
+  assert.match(readme, /https:\/\/api\.moontaleapp\.com\/api\/story\/generate/);
+  assert.match(readme, /Authorization/);
+  assert.match(readme, /Groq/);
+  assert.match(readme, /Cloudflare Workers AI/);
+  assert.doesNotMatch(readme, /No external AI provider is currently connected|Story generation currently runs in the browser using local templates/u);
+});
+
+test("materially changed legal policies show the current update date", () => {
+  for (const route of [
+    "legal/privacy/index.html",
+    "legal/terms/index.html",
+    "legal/cookies/index.html",
+  ]) {
+    const html = readProjectFile(route);
+    assert.match(html, /<strong>Last updated:<\/strong> 2026-09-26/u);
+  }
+});
+
+test("public legal text reflects governed AI story processing", () => {
+  const privacy = readProjectFile("legal/privacy/index.html");
+  const terms = readProjectFile("legal/terms/index.html");
+  const cookies = readProjectFile("legal/cookies/index.html");
+
+  assert.doesNotMatch(privacy, /No external AI provider|stories are generated locally in the browser from predefined templates/u);
+  assert.doesNotMatch(terms, /No external AI API is currently connected|creates stories locally in the browser using predefined templates/u);
+  assert.match(privacy, /api\.moontaleapp\.com/);
+  assert.match(privacy, /Cloudflare/);
+  assert.match(privacy, /Groq/);
+  assert.match(privacy, /Supabase <code>stories<\/code> table/);
+  assert.match(cookies, /moontaleAcceptedStory:/);
+  assert.match(cookies, /moontaleAccountStorySave:/);
+
+  const legalCenter = readProjectFile("legal/index.html");
+  const builder = readProjectFile("story-builder.html");
+  assert.doesNotMatch(legalCenter, /no external AI API connection/iu);
+  assert.match(legalCenter, /governed server-side story service/);
+  assert.match(builder, /governed story API/);
+  assert.match(
+    builder,
+    /does not intentionally include the child's nickname, parent email, or child-profile ID/,
+  );
 });
 
 test("sitemap includes all legal routes", () => {

@@ -25,7 +25,13 @@ import {
   translateFor,
   translations,
 } from "../assets/scripts/core/i18n.js";
-import { readJsonStorage } from "../assets/scripts/core/storage.js";
+import {
+  readJsonStorage,
+  readSavedStories,
+  readStoredProfile,
+  saveGeneratedStory,
+  writeStoredProfile,
+} from "../assets/scripts/core/storage.js";
 import { generateStory } from "../assets/scripts/services/story-generator.js";
 import {
   fillFormFromProfile,
@@ -69,7 +75,7 @@ class ThrowingStorage {
 
 const completeProfile = {
   childName: "Milo",
-  childAge: "6",
+  ageBand: "6-8",
   currentLanguage: "English",
   targetLanguage: "Spanish",
   character: "Astronaut",
@@ -114,12 +120,12 @@ test("builder configuration and profile services share a complete language contr
   const form = {
     elements: {
       childName: { value: "  Nova  " },
-      childAge: { value: "7" },
+      ageBand: { value: "6-8" },
       currentLanguage: { value: "German" },
       targetLanguage: { value: "French" },
       character: { value: "Robot" },
       mood: { value: "Calm" },
-      interest: { value: "  planets  " },
+      interest: { value: "robots" },
       goal: { value: "Confidence" },
       readingTime: { value: "5" },
       newWordsCount: { value: "3" },
@@ -129,7 +135,8 @@ test("builder configuration and profile services share a complete language contr
 
   const profile = getFormProfile(form);
   assert.equal(profile.childName, "Nova");
-  assert.equal(profile.interest, "planets");
+  assert.equal(profile.ageBand, "6-8");
+  assert.equal(profile.interest, "robots");
   assert.equal(profile.currentLanguage, "German");
   assert.equal(profile.targetLanguage, "French");
   assert.equal(profile.narrativeLanguage, "de");
@@ -143,6 +150,61 @@ test("builder configuration and profile services share a complete language contr
   assert.equal(form.elements.currentLanguage.value, "Polish");
   assert.equal(form.elements.targetLanguage.value, "Spanish");
   assert.equal(form.elements.websiteLanguage.value, "de");
+});
+
+test("profile form helpers preserve an explicit unsupported language value", () => {
+  const form = {
+    elements: {
+      childName: { value: "Nova" },
+      ageBand: { value: "6-8" },
+      currentLanguage: { value: "Klingon" },
+      targetLanguage: { value: "Spanish" },
+      character: { value: "Robot" },
+      mood: { value: "Calm" },
+      interest: { value: "robots" },
+      goal: { value: "Confidence" },
+      readingTime: { value: "5" },
+      newWordsCount: { value: "3" },
+    },
+  };
+  const profile = getFormProfile(form);
+  assert.equal(profile.currentLanguage, "Klingon");
+  assert.equal(profile.narrativeLanguage, "");
+  assert.equal(profile.targetLanguage, "Spanish");
+  assert.equal(profile.learningLanguage, "es");
+
+  fillFormFromProfile(form, {
+    currentLanguage: "Klingon",
+    targetLanguage: "Spanish",
+  });
+  assert.equal(form.elements.currentLanguage.value, "Klingon");
+});
+
+test("browser profile persistence removes legacy exact ages", () => {
+  const storage = new MemoryStorage();
+  assert.equal(
+    writeStoredProfile({ childName: "Nova", childAge: "7" }, storage),
+    true,
+  );
+  const serialized = storage.getItem("moontaleStoryProfile");
+  assert.doesNotMatch(serialized, /childAge/u);
+  assert.deepEqual(readStoredProfile({ storage }), {
+    childName: "Nova",
+    ageBand: "6-8",
+  });
+});
+
+test("saved-story persistence cannot retain an exact child age", () => {
+  const storage = new MemoryStorage();
+  saveGeneratedStory(
+    { title: "A story", languageCode: "en" },
+    { targetLanguage: "Spanish", childAge: 5, childName: "Nova" },
+    storage,
+  );
+
+  const serialized = storage.getItem("moontaleSavedStories");
+  assert.doesNotMatch(serialized, /childAge/u);
+  assert.equal(readSavedStories(storage)[0].profile.ageBand, "3-5");
 });
 
 test("central language resolver keeps interface, narrative, and learning languages separate", () => {

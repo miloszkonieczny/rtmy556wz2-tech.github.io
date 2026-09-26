@@ -207,17 +207,12 @@
               </label>
 
               <label class="field">
-                <span data-i18n="builder.fields.childAge">Child's age</span>
-                <select name="childAge" required>
-                  <option value="" data-i18n="builder.options.chooseAge">Choose age</option>
-                  <option value="3" data-i18n="builder.options.age3">3 years old</option>
-                  <option value="4" data-i18n="builder.options.age4">4 years old</option>
-                  <option value="5" data-i18n="builder.options.age5">5 years old</option>
-                  <option value="6" data-i18n="builder.options.age6">6 years old</option>
-                  <option value="7" data-i18n="builder.options.age7">7 years old</option>
-                  <option value="8" data-i18n="builder.options.age8">8 years old</option>
-                  <option value="9" data-i18n="builder.options.age9">9 years old</option>
-                  <option value="10" data-i18n="builder.options.age10">10 years old</option>
+                <span data-i18n="builder.fields.ageBand">Child's age range</span>
+                <select name="ageBand" required>
+                  <option value="" data-i18n="builder.options.chooseAgeBand">Choose age range</option>
+                  <option value="3-5" data-i18n="builder.options.ageBand3to5">3–5 years old</option>
+                  <option value="6-8" data-i18n="builder.options.ageBand6to8">6–8 years old</option>
+                  <option value="9-12" data-i18n="builder.options.ageBand9to12">9–12 years old</option>
                 </select>
                 <small class="field-error"></small>
               </label>
@@ -282,14 +277,20 @@
 
             <label class="field field-wide">
               <span data-i18n="builder.fields.interest">Favorite interest</span>
-              <input
+              <select
                 name="interest"
-                type="text"
-                maxlength="50"
-                placeholder="e.g. stars, trains, butterflies"
-                data-i18n-placeholder="builder.placeholders.interest"
                 required
-              />
+              >
+                <option value="" data-i18n="builder.options.chooseInterest">Choose an interest</option>
+                <option value="stars" data-i18n="builder.interests.stars">Stars and space</option>
+                <option value="animals" data-i18n="builder.interests.animals">Animals</option>
+                <option value="dinosaurs" data-i18n="builder.interests.dinosaurs">Dinosaurs</option>
+                <option value="nature" data-i18n="builder.interests.nature">Nature</option>
+                <option value="trains" data-i18n="builder.interests.trains">Trains</option>
+                <option value="robots" data-i18n="builder.interests.robots">Robots</option>
+                <option value="music" data-i18n="builder.interests.music">Music</option>
+                <option value="art" data-i18n="builder.interests.art">Art</option>
+              </select>
               <small class="field-error"></small>
             </label>
           </fieldset>
@@ -366,6 +367,12 @@
             </label>
             <small class="group-error" data-error-for="adultAuthorization"></small>
 
+            <p class="consent-row" data-local-provider-disclosure hidden>
+              <span data-i18n="builder.localProvider.authorization">
+                Real-provider test mode sends only the selected age range, controlled interest, story settings, and vocabulary IDs to Groq. It does not send the nickname or exact age. Use fictional, non-sensitive test details only.
+              </span>
+            </p>
+
             <label class="consent-row">
               <input name="marketingConsent" type="checkbox" />
               <span>
@@ -374,8 +381,13 @@
               </span>
             </label>
             <p class="microcopy privacy-note">
-              Story details are used locally to create the preview and are stored in this browser. Only your email
-              and consent details are sent to Formspree if you choose product updates.
+              Story details are stored in this browser using an age range rather than an exact age. For authorised
+              private-pilot story generation on moontaleapp.com, MoonTale sends the selected age range, narrative and
+              learning languages, character, mood, controlled interest, goal, reading time, requested vocabulary
+              count, vocabulary identifiers, and adult-authorization metadata to its governed story API. The production
+              story request does not intentionally include the child's nickname, parent email, or child-profile ID. Only
+              your email and consent details are sent to Formspree if you choose product updates. In local AI test mode,
+              the disclosed controlled story settings are sent to the local Worker.
             </p>
           </fieldset>
 
@@ -390,7 +402,7 @@
     </main>
 
     <footer class="app-footer shell">
-      <p data-i18n="builder.footer.note">Made for calm family moments. Your builder details stay in this browser.</p>
+      <p data-i18n="builder.footer.note">Made for calm family moments. Story details are handled as described in the Privacy Policy.</p>
       <a href="mailto:contact@moontaleapp.com">contact@moontaleapp.com</a>
       <nav class="legal-footer-links" aria-label="Legal links">
         <a href="./legal/privacy/">Privacy Policy</a>
@@ -403,6 +415,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-    <script type="module" src="./assets/scripts/pages/builder.js?v=20260727-child-profiles"></script>
+    <script type="module" src="./assets/scripts/pages/builder.js?v=20260817-explicit-corrections"></script>
   </body>
 </html>
