@@ -126,12 +126,12 @@ const errorCases = [
   [
     "pilot_authorization_required",
     "INVALID_CONFIGURATION",
-    "Some story details need to be corrected before MoonTale can generate this story.",
+    "Sign in to a parent account to create stories in the MoonTale private pilot.",
   ],
   [
     "pilot_access_denied",
     "INVALID_CONFIGURATION",
-    "Some story details need to be corrected before MoonTale can generate this story.",
+    "This parent account is not currently enabled for MoonTale private-pilot story generation.",
   ],
   [
     "quality_block",
@@ -167,6 +167,29 @@ for (const [apiCode, safeCode, expectedMessage] of errorCases) {
     assert.equal(translateFor("en", state.translationKey), expectedMessage);
   });
 }
+
+test("pilot authorization and access messages are distinct in all supported interface languages", () => {
+  for (const language of ["en", "pl", "es", "fr", "de"]) {
+    const authorization = storyErrorState({
+      code: "pilot_authorization_required",
+    });
+    const access = storyErrorState({ code: "pilot_access_denied" });
+    const invalid = storyErrorState({ code: "invalid_request" });
+
+    const authorizationMessage = translateFor(
+      language,
+      authorization.translationKey,
+    );
+    const accessMessage = translateFor(language, access.translationKey);
+    const invalidMessage = translateFor(language, invalid.translationKey);
+
+    assert.ok(authorizationMessage);
+    assert.ok(accessMessage);
+    assert.notEqual(authorizationMessage, invalidMessage);
+    assert.notEqual(accessMessage, invalidMessage);
+    assert.notEqual(authorizationMessage, accessMessage);
+  }
+});
 
 test("accepted Story A survives a simulated reload without another generation", async () => {
   const storage = new MemoryStorage();

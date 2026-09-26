@@ -19,11 +19,11 @@ const ERROR_STATE_BY_API_CODE = Object.freeze({
   }),
   pilot_authorization_required: Object.freeze({
     code: "INVALID_CONFIGURATION",
-    translationKey: "story.error.invalidConfiguration",
+    translationKey: "story.error.pilotAuthorizationRequired",
   }),
   pilot_access_denied: Object.freeze({
     code: "INVALID_CONFIGURATION",
-    translationKey: "story.error.invalidConfiguration",
+    translationKey: "story.error.pilotAccessDenied",
   }),
   unsupported_language_pair: Object.freeze({
     code: "UNSUPPORTED_LANGUAGE_PAIR",

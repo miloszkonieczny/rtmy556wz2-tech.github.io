@@ -282,6 +282,8 @@ const messages = {
   "story.state.errorTitle": "Diese Geschichte ist noch nicht bereit",
   "story.state.error": "MoonTale konnte diese Geschichte nicht sicher fertigstellen. Bitte versucht es erneut.",
   "story.error.invalidConfiguration": "Einige Angaben müssen korrigiert werden, bevor MoonTale diese Geschichte erstellen kann.",
+  "story.error.pilotAuthorizationRequired": "Melde dich mit einem Elternkonto an, um Geschichten im privaten MoonTale-Pilotprogramm zu erstellen.",
+  "story.error.pilotAccessDenied": "Dieses Elternkonto ist derzeit nicht für die Geschichtenerstellung im privaten MoonTale-Pilotprogramm freigeschaltet.",
   "story.error.unsupportedLanguagePair": "Diese Sprachkombination ist für die Erstellung von Geschichten noch nicht verfügbar.",
   "story.error.providerRateLimit": "MoonTale bereitet gerade viele Geschichten vor. Versuche es in Kürze erneut.",
   "story.error.providerTimeout": "Die Vorbereitung der Geschichte hat zu lange gedauert. Versuche es erneut.",

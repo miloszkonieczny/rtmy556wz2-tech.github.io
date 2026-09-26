@@ -283,6 +283,8 @@ const messages = {
   "story.state.errorTitle": "Ta bajka nie jest jeszcze gotowa",
   "story.state.error": "MoonTale nie mogło bezpiecznie ukończyć tej bajki. Spróbuj ponownie.",
   "story.error.invalidConfiguration": "Niektóre szczegóły bajki wymagają poprawy, zanim MoonTale będzie mogło ją utworzyć.",
+  "story.error.pilotAuthorizationRequired": "Zaloguj się na konto rodzica, aby tworzyć opowieści w ramach prywatnego pilotażu MoonTale.",
+  "story.error.pilotAccessDenied": "To konto rodzica nie ma obecnie dostępu do generowania opowieści w ramach prywatnego pilotażu MoonTale.",
   "story.error.unsupportedLanguagePair": "Ta kombinacja języków nie jest jeszcze dostępna dla generowania bajek.",
   "story.error.providerRateLimit": "MoonTale przygotowuje teraz wiele bajek. Spróbuj ponownie za chwilę.",
   "story.error.providerTimeout": "Przygotowanie bajki trwało zbyt długo. Spróbuj ponownie.",

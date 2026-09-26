@@ -282,6 +282,8 @@ const messages = {
   "story.state.errorTitle": "Este cuento aún no está listo",
   "story.state.error": "MoonTale no pudo terminar este cuento de forma segura. Inténtalo de nuevo.",
   "story.error.invalidConfiguration": "Hay que corregir algunos detalles antes de que MoonTale pueda generar este cuento.",
+  "story.error.pilotAuthorizationRequired": "Inicia sesión en una cuenta de padre, madre o tutor para crear historias en el piloto privado de MoonTale.",
+  "story.error.pilotAccessDenied": "Esta cuenta de padre, madre o tutor no tiene actualmente habilitada la generación de historias del piloto privado de MoonTale.",
   "story.error.unsupportedLanguagePair": "Esta combinación de idiomas todavía no está disponible para generar cuentos.",
   "story.error.providerRateLimit": "MoonTale está preparando muchos cuentos ahora. Inténtalo de nuevo en breve.",
   "story.error.providerTimeout": "El cuento tardó demasiado en prepararse. Inténtalo de nuevo.",
