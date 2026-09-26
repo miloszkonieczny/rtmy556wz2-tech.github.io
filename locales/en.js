@@ -224,7 +224,7 @@ const messages = {
   "builder.buttons.generate": "Create Tonight's Story",
   "builder.status.creating": "Creating your story...",
   "builder.status.ready": "Your story is ready. Opening it now...",
-  "builder.footer.note": "Made for calm family moments. Your builder details stay in this browser.",
+  "builder.footer.note": "Made for calm family moments. Story details are handled as described in the Privacy Policy.",
   "story.skip": "Skip to story",
   "story.header.createAnother": "Create another story",
   "story.hero.eyebrow": "Tonight's MoonTale",

@@ -255,6 +255,16 @@ test("public legal text reflects governed AI story processing", () => {
   assert.match(privacy, /Supabase <code>stories<\/code> table/);
   assert.match(cookies, /moontaleAcceptedStory:/);
   assert.match(cookies, /moontaleAccountStorySave:/);
+
+  const legalCenter = readProjectFile("legal/index.html");
+  const builder = readProjectFile("story-builder.html");
+  assert.doesNotMatch(legalCenter, /no external AI API connection/iu);
+  assert.match(legalCenter, /governed server-side story service/);
+  assert.match(builder, /governed story API/);
+  assert.match(
+    builder,
+    /does not intentionally include the child's nickname, parent email, or child-profile ID/,
+  );
 });
 
 test("sitemap includes all legal routes", () => {

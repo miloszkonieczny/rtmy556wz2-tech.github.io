@@ -224,7 +224,7 @@ const messages = {
   "builder.buttons.generate": "Stwórz dzisiejszą bajkę",
   "builder.status.creating": "Tworzę Twoją bajkę...",
   "builder.status.ready": "Bajka jest gotowa. Otwieram ją teraz...",
-  "builder.footer.note": "Stworzone dla spokojnych rodzinnych chwil. Dane kreatora zostają w tej przeglądarce.",
+  "builder.footer.note": "Stworzone dla spokojnych rodzinnych chwil. Dane dotyczące historii są przetwarzane zgodnie z Polityką prywatności.",
   "story.skip": "Przejdź do bajki",
   "story.header.createAnother": "Stwórz kolejną bajkę",
   "story.hero.eyebrow": "Dzisiejsze MoonTale",
