@@ -243,7 +243,12 @@ test("README reflects governed production story routing without stale local-only
 });
 
 test("materially changed legal policies show the current update date", () => {
-  for (const html of [privacy, terms, cookies]) {
+  for (const route of [
+    "legal/privacy/index.html",
+    "legal/terms/index.html",
+    "legal/cookies/index.html",
+  ]) {
+    const html = readProjectFile(route);
     assert.match(html, /<strong>Last updated:<\/strong> 2026-09-26/u);
   }
 });
