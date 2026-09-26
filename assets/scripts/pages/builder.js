@@ -1,4 +1,8 @@
-import { STORY_BUILDER_FORMSPREE_TIMEOUT_MS, STORY_PAGE_URL } from "../core/config.js?v=20260724-story-fix";
+import {
+  STORY_BUILDER_FORMSPREE_TIMEOUT_MS,
+  STORY_PAGE_URL,
+  languageCodeFromName,
+} from "../core/config.js?v=20260724-story-fix";
 import { initializeCookieConsent } from "../core/cookie-consent.js";
 import { initializeRevealElements } from "../core/dom.js";
 import {
@@ -31,13 +35,36 @@ import {
 import {
   getSupabaseClient,
 } from "../supabase-config.js?v=20260726-token-recovery";
+import {
+  LOCAL_STORY_ADULT_AUTHORIZATION,
+  LOCAL_STORY_API_LANGUAGES,
+  LOCAL_STORY_INTERESTS,
+  localStoryProfileCompatibility,
+  migrateLocalStoryProfile,
+  shouldUseLocalStoryApi,
+  shouldUseStoryApi,
+} from "../services/story-api.js";
 
-const PROFILE_AGE_TO_STORY_AGE = Object.freeze({
-  "3-5": "4",
-  "6-8": "7",
-  "9-11": "10",
-  "12+": "10",
+const PROFILE_AGE_TO_STORY_AGE_BAND = Object.freeze({
+  "3-5": "3-5",
+  "6-8": "6-8",
+  "9-11": "9-12",
+  "12+": "12+",
 });
+
+function controlledInterestFromProfile(profile) {
+  const candidates = Array.isArray(profile.interests)
+    ? profile.interests
+    : [profile.interest];
+  const match = candidates
+    .map((value) => String(value || "").trim().toLowerCase())
+    .find((value) => LOCAL_STORY_INTERESTS.includes(value));
+  if (match) return match;
+  const saved = candidates
+    .map((value) => String(value || "").trim())
+    .find(Boolean);
+  return saved || "stars";
+}
 
 function createStoryGenerationId() {
   if (typeof globalThis.crypto?.randomUUID === "function") {
@@ -47,18 +74,100 @@ function createStoryGenerationId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+function enforceStoryApiLanguageContract(form) {
+  if (!shouldUseStoryApi()) return;
+
+  const currentLanguage = form.elements.currentLanguage;
+  const targetLanguage = form.elements.targetLanguage;
+  if (!currentLanguage || !targetLanguage) return;
+
+  for (const select of [currentLanguage, targetLanguage]) {
+    for (const option of select.options) {
+      if (!option.value) continue;
+      const supported = LOCAL_STORY_API_LANGUAGES.includes(
+        languageCodeFromName(option.value),
+      );
+      const preservesSavedChoice = option.value === select.value;
+      option.disabled = !supported && !preservesSavedChoice;
+      option.hidden = !supported && !preservesSavedChoice;
+    }
+  }
+
+  for (const option of targetLanguage.options) {
+    if (!option.hidden && option.value) {
+      option.disabled =
+        option.value === currentLanguage.value &&
+        option.value !== targetLanguage.value;
+    }
+  }
+
+  const profile = getFormProfile(form);
+  const compatibility = localStoryProfileCompatibility(profile);
+  const languageNeedsCorrection = compatibility.issues.some((issue) =>
+    [
+      "missing_language_selection",
+      "invalid_language_selection",
+      "unsupported_language_pair",
+      "same_language_pair",
+    ].includes(issue),
+  );
+  const ageNeedsCorrection = compatibility.issues.includes(
+    "unsupported_age_band",
+  );
+  const interestNeedsCorrection = compatibility.issues.includes(
+    "unsupported_interest",
+  );
+  currentLanguage.setCustomValidity(
+    languageNeedsCorrection
+      ? translate("form.error.unsupportedLanguagePair")
+      : "",
+  );
+  targetLanguage.setCustomValidity(
+    languageNeedsCorrection
+      ? translate("form.error.unsupportedLanguagePair")
+      : "",
+  );
+  form.elements.ageBand?.setCustomValidity(
+    ageNeedsCorrection
+      ? translate("form.error.unsupportedAgeBand")
+      : "",
+  );
+  form.elements.interest?.setCustomValidity(
+    interestNeedsCorrection
+      ? translate("form.error.unsupportedInterest")
+      : "",
+  );
+}
+
+async function initializeLocalProviderDisclosure(form) {
+  if (!["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) return;
+
+  try {
+    const response = await fetch("http://127.0.0.1:8787/health", {
+      cache: "no-store",
+      credentials: "omit",
+    });
+    const body = await response.json();
+    if (!response.ok || body?.mode !== "groq") return;
+
+    const disclosure = form.querySelector("[data-local-provider-disclosure]");
+    if (!disclosure) return;
+    disclosure.hidden = false;
+  } catch {
+    // The public/static fallback and mock mode do not require a provider disclosure.
+  }
+}
+
 function profileToBuilderValues(profile) {
   return {
     childName: profile.nickname || "",
-    childAge:
-      PROFILE_AGE_TO_STORY_AGE[profile.age_group] || "",
+    ageBand:
+      PROFILE_AGE_TO_STORY_AGE_BAND[profile.age_group] || "",
     currentLanguage:
       languageLabel(profile.native_language),
     targetLanguage:
       languageLabel(profile.target_language),
-    interest: Array.isArray(profile.interests)
-      ? profile.interests[0] || ""
-      : "",
+    interest: controlledInterestFromProfile(profile),
   };
 }
 
@@ -154,6 +263,7 @@ async function initializeSavedProfileSelector(
         form,
         profileToBuilderValues(selectedProfile),
       );
+      enforceStoryApiLanguageContract(form);
       syncLanguageFormFields();
       status.textContent =
         `${selectedProfile.nickname}'s saved details were loaded.`;
@@ -293,9 +403,16 @@ function initializeBuilderPage() {
   const emailField = form.elements.email;
   let currentStep = 0;
 
-  const storedProfile = readStoredProfile();
+  const rawStoredProfile = readStoredProfile();
+  const storedProfile =
+    shouldUseStoryApi() && rawStoredProfile
+      ? migrateLocalStoryProfile(rawStoredProfile)
+      : rawStoredProfile;
+
+  void initializeLocalProviderDisclosure(form);
 
   fillFormFromProfile(form, storedProfile);
+  enforceStoryApiLanguageContract(form);
   syncLanguageFormFields();
 
   void initializeSavedProfileSelector(
@@ -373,6 +490,15 @@ function initializeBuilderPage() {
       syncMarketingEmailRequirement();
     }
 
+    if (
+      target === form.elements.currentLanguage ||
+      target === form.elements.targetLanguage ||
+      target === form.elements.ageBand ||
+      target === form.elements.interest
+    ) {
+      enforceStoryApiLanguageContract(form);
+    }
+
     if (target.matches("input, select")) {
       target.removeAttribute("aria-invalid");
       const step = target.closest(".wizard-step");
@@ -386,6 +512,7 @@ function initializeBuilderPage() {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     syncMarketingEmailRequirement();
+    enforceStoryApiLanguageContract(form);
 
     if (!validateStep(steps[currentStep])) {
       return;
@@ -393,6 +520,10 @@ function initializeBuilderPage() {
 
     const profile = {
       ...getFormProfile(form),
+      adultAuthorization: {
+        confirmed: form.elements.adultAuthorization?.checked === true,
+        ...LOCAL_STORY_ADULT_AUTHORIZATION,
+      },
       childProfileId:
         form.elements.savedChildProfile?.value || "",
       storyGenerationId: createStoryGenerationId(),
